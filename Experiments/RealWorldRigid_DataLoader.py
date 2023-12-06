@@ -3,6 +3,7 @@ from __future__ import division
 from __future__ import print_function
 
 from headers import *
+from scipy.spatial.transform import Rotation as R
 
 def resample(original_trajectory, desired_number_timepoints):
 	original_traj_len = len(original_trajectory)
@@ -49,6 +50,62 @@ def create_batch_matrix(position, orientation):
 	homogenous_matrix[:,-1,-1] = 1.
 
 	return homogenous_matrix
+
+def define_ground_world_transformation():
+
+	# Defines the transformation between the ground frame (located on the table), and the world frame (located at the base of the robot). 
+	rotation = R.from_euler('Z', 180, degrees=True)
+
+	ground_in_world_homogenous_matrix = np.zeros((4,4))
+	ground_in_world_homogenous_matrix[:3, :3] = rotation.as_matrix()
+	ground_in_world_homogenous_matrix[:3, -1] = np.array([0.595, 0.0145, -0.15])
+	ground_in_world_homogenous_matrix[-1, -1] = 1.
+
+	return ground_in_world_homogenous_matrix
+
+def transform_pose_from_ground_to_world(pose_array):
+
+	# Takes a pose in the ground frame and transforms it to the world frame. 
+	ground_in_world_homogenous_matrix = define_ground_world_transformation()
+	
+	# Set pose pose in homogenous matrix
+	pose_in_ground_hmat = np.zeros((pose_array.shape[0], 4,4))
+	pose_in_ground_hmat[:,:3, :3] = R.from_quat(pose_array[:,3:]).as_matrix()
+	pose_in_ground_hmat[:,:3, -1] = pose_array[:,:3]
+	pose_in_ground_hmat[:, -1, -1] = 1.
+
+	# Transform
+	# world_in_ground_hmat = invert(ground_in_world_homogenous_matrix)
+	pose_in_world_hmat = np.matmul(ground_in_world_homogenous_matrix, pose_in_ground_hmat)
+
+	# Retrieve pose. 
+	pose_in_world_quaternion = R.from_matrix(pose_in_world_hmat[:, :3, :3]).as_quat()
+	pose_in_world_position = pose_in_world_hmat[:, :3, -1]
+
+	return pose_in_world_position, pose_in_world_quaternion
+
+def transform_pose_from_world_to_ground(pose_array):
+
+	# Takes a pose in the ground frame and transforms it to the world frame. 
+	ground_in_world_homogenous_matrix = define_ground_world_transformation()
+	world_in_ground_homogenous_matrix = invert(ground_in_world_homogenous_matrix)
+	
+	# Set pose in homogenous matrix
+	pose_in_world_hmat = np.zeros((pose_array.shape[0], 4,4))
+	pose_in_world_hmat[:,:3, :3] = R.from_quat(pose_array[:,3:]).as_matrix()
+	pose_in_world_hmat[:,:3, -1] = pose_array[:,:3]
+	pose_in_world_hmat[:, -1, -1] = 1.
+
+	# Transform
+	# world_in_ground_hmat = invert(ground_in_world_homogenous_matrix)
+	pose_in_ground_hmat = np.matmul(world_in_ground_homogenous_matrix, pose_in_world_hmat)
+
+	# Retrieve pose. 
+	pose_in_ground_quaternion = R.from_matrix(pose_in_ground_hmat[:, :3, :3]).as_quat()
+	pose_in_ground_position = pose_in_ground_hmat[:, :3, -1]
+
+	return pose_in_ground_position, pose_in_ground_quaternion
+
 
 class RealWorldRigid_PreDataset(Dataset): 
 
@@ -170,25 +227,6 @@ class RealWorldRigid_PreDataset(Dataset):
 		pose_sequence.pop('validity')
 
 		return pose_sequence
-
-	# def compute_relative_poses(self, demonstration):
-		
-	# 	from scipy.spatial.transform import Rotation as R
-
-	# 	# Get poses of object1 and object2 with respect to ground. 
-	# 	demonstration['object1_pose'] = {}
-	# 	demonstration['object2_pose'] = {}
-	# 	demonstration['object1_pose']['position'] = demonstration['object1_cam_frame_pose']['position'] - demonstration['ground_cam_frame_pose']['position']
-	# 	demonstration['object2_pose']['position'] = demonstration['object2_cam_frame_pose']['position'] - demonstration['ground_cam_frame_pose']['position']
-
-	# 	r_ground = R.from_quat(demonstration['ground_cam_frame_pose']['orientation'])
-	# 	r_obj1 = R.from_quat(demonstration['object1_cam_frame_pose']['orientation'])
-	# 	r_obj2 = R.from_quat(demonstration['object2_cam_frame_pose']['orientation'])
-
-	# 	demonstration['object1_pose']['orientation'] = (r_ground.inv()*r_obj1).as_quat()
-	# 	demonstration['object2_pose']['orientation'] = (r_ground.inv()*r_obj2).as_quat()		
-
-	# 	return demonstration
 
 	def compute_relative_poses(self, demonstration):
 
@@ -534,7 +572,7 @@ class RealWorldRigid_Dataset(RealWorldRigid_PreDataset):
 				self.downsample_data(data_element, data_element['task-id'], self.args.ds_freq)
 				# data_element = 
 			
-			if self.args.smoothen: 
+			if self.args.smoothen:
 				data_element['demo'] = gaussian_filter1d(data_element['demo'],self.kernel_bandwidth,axis=0,mode='nearest')
 				data_element['robot-state'] = gaussian_filter1d(data_element['robot-state'],self.kernel_bandwidth,axis=0,mode='nearest')
 				data_element['object-state'] = gaussian_filter1d(data_element['object-state'],self.kernel_bandwidth,axis=0,mode='nearest')
@@ -546,9 +584,10 @@ class RealWorldRigid_Dataset(RealWorldRigid_PreDataset):
 
 		return data_element
 	
-	def compute_statistics(self):
+	def compute_statistics(self, prefix='RealWorldRigid'):
 
-		self.state_size = 21
+		if prefix=='RealWorldRigid':
+			self.state_size = 21
 		self.total_length = self.__len__()
 		mean = np.zeros((self.state_size))
 		variance = np.zeros((self.state_size))
@@ -604,11 +643,102 @@ class RealWorldRigid_Dataset(RealWorldRigid_PreDataset):
 		vel_max_value = vel_maxs.max(axis=0)
 		vel_min_value = vel_mins.min(axis=0)
 
-		np.save("RealWorldRigid_Mean.npy", mean)
-		np.save("RealWorldRigid_Var.npy", variance)
-		np.save("RealWorldRigid_Min.npy", min_value)
-		np.save("RealWorldRigid_Max.npy", max_value)
-		np.save("RealWorldRigid_Vel_Mean.npy", vel_mean)
-		np.save("RealWorldRigid_Vel_Var.npy", vel_variance)
-		np.save("RealWorldRigid_Vel_Min.npy", vel_min_value)
-		np.save("RealWorldRigid_Vel_Max.npy", vel_max_value)
+		np.save("{0}_Mean.npy".format(prefix), mean)
+		np.save("{0}_Var.npy".format(prefix), variance)
+		np.save("{0}_Min.npy".format(prefix), min_value)
+		np.save("{0}_Max.npy".format(prefix), max_value)
+		np.save("{0}_Vel_Mean.npy".format(prefix), vel_mean)
+		np.save("{0}_Vel_Var.npy".format(prefix), vel_variance)
+		np.save("{0}_Vel_Min.npy".format(prefix), vel_min_value)
+		np.save("{0}_Vel_Max.npy".format(prefix), vel_max_value)
+
+class RealWorldRigid_JointEEFDataset(RealWorldRigid_Dataset):
+
+	def __init__(self, args):
+				
+		super(RealWorldRigid_JointEEFDataset, self).__init__(args)	
+		self.stat_dir_name ='RealWorldRigidJointEEF'
+
+	def process_end_effector_state(self, end_effector_trajectory):
+
+		# Takes in end effector trajectory of the robot, and:
+		# 1) Transforms this to a quaternion. 
+		# 2) Transforms this from the world frame to the ground frame. 
+
+		end_effectory_pose_in_world = np.zeros((end_effector_trajectory.shape[0], 7))
+
+		# scale factor is just mm to m, because EE trajectory is mm by default. 
+		scale = 1./1000.
+
+		# Convert to quaternion and pose array. 
+		end_effectory_pose_in_world[:,:3] = end_effector_trajectory[:,:3] * scale
+		end_effectory_pose_in_world[:,3:] = R.from_euler('XYZ', end_effector_trajectory[:,3:]).as_quat()
+
+		# Now transform this to ground frame. 
+		end_effectory_pos_in_ground, end_effectory_quat_in_ground = transform_pose_from_world_to_ground(end_effectory_pose_in_world)
+		
+		return end_effectory_pos_in_ground, end_effectory_quat_in_ground
+
+	def compute_object_eef_relative_state(self, eef_traj, object_traj):
+
+		# Parse into individual position and quaternion. 
+		eef_pos = eef_traj[:,:3]
+		eef_quat = eef_traj[:,3:]
+
+		object_pos = object_traj[:,:3]
+		object_quat = object_traj[:,3:]
+
+		# Construct homogenous matrices for each frame. 
+		eef_in_ground_hmats = create_batch_matrix(eef_pos, eef_quat)
+		object_in_ground_hmats = create_batch_matrix(object_pos, object_quat)
+
+		# We want the Object pose in the frame of the EEF pose, because there's two objects. This makes more sense than transforming EEF twice / everything to one object frame. 
+		
+		# Pattern. 
+		# # Inverse of the ground in camera.
+		# camera_in_ground_homogenous_matrices = invert_batch_matrix(ground_in_camera_homogenous_matrices)
+
+		# # Now transform with batch multiplication. 
+		# object1_in_ground_homogenous_matrices = np.matmul(camera_in_ground_homogenous_matrices, object1_in_camera_homogenous_matrices)
+
+		# First invert eef_in_ground. 
+		ground_in_eef_hmats = invert_batch_matrix(eef_in_ground_hmats)
+		object_in_eef_hmats = np.matmul(ground_in_eef_hmats, object_in_ground_hmats)
+
+		# Recover Poses. 
+		object_in_eef_pos = object_in_eef_hmats[:,:3,-1]
+		object_in_eef_quat = R.from_matrix(object_in_eef_hmats[:,:3,:3]).as_quat()
+
+		object_in_eef_pose = np.concatenate([object_in_eef_pos, object_in_eef_quat],axis=-1)
+		return object_in_eef_pose
+		
+	def __getitem__(self, index):
+		
+		# Run super getitem.
+		data_element = super().__getitem__(index)
+
+		# Now add the EEF state in addition to the robot joint state and object state...
+
+		# Backup original. 
+		data_element['old_demo'] = copy.deepcopy(data_element['demo'])
+		# Now create new. 
+		
+		# Take original eef state, convert orientations to quaternions and transform frames. 
+		transformed_eef_pos, transformed_eef_quat = self.process_end_effector_state(data_element['eef-state'])
+		data_element['transformed_eef_state'] = np.concatenate([transformed_eef_pos, transformed_eef_quat], axis=-1)
+
+		# Now also retrieve the object poses relative to the EEF.
+		data_element['relative-object-state'] = np.zeros_like(data_element['object-state'])
+		data_element['relative-object-state'][...,:7] = self.compute_object_eef_relative_state(data_element['transformed_eef_state'], data_element['object-state'][...,:7])
+		data_element['relative-object-state'][...,7:] = self.compute_object_eef_relative_state(data_element['transformed_eef_state'], data_element['object-state'][...,7:])
+
+		data_element['demo'] = np.concatenate([ data_element['robot-state'], \
+										 		data_element['transformed_eef_state'], \
+					  							data_element['object-state']], axis=-1)
+
+		return data_element
+
+	def compute_statistics(self):
+		 
+		self.state_size = 28
+		return super().compute_statistics(prefix='RealWorldRigidJointEEF')

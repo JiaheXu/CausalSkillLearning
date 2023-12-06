@@ -1,0 +1,18 @@
+what's the correct cmds for real robot data?
+
+Format of robot data? trajectories or actions or both?
+
+Which data includes multiple objects in environmental abstractions?
+
+How to combine data from different long horizon tasks?
+
+Seems ContinuousFactoredEncoderNetwork uses behavioral and environmental abstraction, it has many succeed class such as ContinuousSequentialFactoredEncoderNetwork & ContinuousFactoredSoftEncoderNetwor, what's the difference?
+
+Policy managers, which one is the best, what's the different between the ones with "joint" and the ones without it
+
+difference between PolicyManager_Joint & PolicyManager_Transfer & PolicyManager_Pretrain & PolicyManager_Imitation & PolicyManager_BatchPretrain.
+
+difference between PolicyManager_DMPBaselines & PolicyManager_JointFixEmbedTransfer & PolicyManager_CycleConsistencyTransfer & PolicyManager_JointTransfer
+
+difference between baselineRL & downstreamRL & DMP policy_managers
+

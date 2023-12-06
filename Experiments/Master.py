@@ -1,5 +1,4 @@
-# KABOOM
-
+# YUZU
 
 # Copyright (c) Facebook, Inc. and its affiliates.
 # All rights reserved.
@@ -10,7 +9,7 @@
 from headers import *
 import DataLoaders, MIME_DataLoader, Roboturk_DataLoader, Mocap_DataLoader, Robomimic_DataLoaders, \
 	  GRAB_DataLoader, DAPG_DataLoader, DexMV_DataLoader, MOMART_DataLoader, FrankaKitchen_DataLoader, \
-		RealWorldRigid_DataLoader
+		RealWorldRigid_DataLoader, NDAX_DataLoader
 from PolicyManagers import *
 import TestClass
 import faulthandler
@@ -132,6 +131,18 @@ def return_dataset(args, data=None, create_dataset_variation=False):
 		dataset = RealWorldRigid_DataLoader.RealWorldRigid_PreDataset(args)
 	elif args.data in ['RealWorldRigid','RealWorldRigidRobot']:
 		dataset = RealWorldRigid_DataLoader.RealWorldRigid_Dataset(args)
+	elif args.data in ['RealWorldRigidJEEF']:
+		dataset = RealWorldRigid_DataLoader.RealWorldRigid_JointEEFDataset(args)
+	############################
+	elif args.data=='NDAXPreproc':
+		dataset = NDAX_DataLoader.NDAXInterface_PreDataset(args)
+	elif args.data in ['NDAX', 'NDAXMotorAngles']:
+		dataset = NDAX_DataLoader.NDAXInterface_Dataset(args)
+	############################
+	elif args.data=='RealWorldRigidHumanPreproc':
+		dataset = RealWorldRigidHuman_DataLoader.RealWorldRigidHuman_PreDataset(args)
+	elif args.data=='RealWorldRigidHuman':
+		dataset = RealWorldRigidHuman_DataLoader.RealWorldRigidHuman_PreDataset(args)
 
 	return dataset
 
@@ -429,6 +440,12 @@ def parse_arguments():
 	parser.add_argument('--task_based_aux_loss_weight', dest='task_based_aux_loss_weight', type=float, default=0., help='Weight to place on task based auxillary loss.')
 	parser.add_argument('--negative_task_based_component_weight', dest='negative_task_based_component_weight', type=float, default=1., help='Weight to place on the negative component of the task based aux loss.')
 	parser.add_argument('--pairwise_z_distance_threshold', dest='pairwise_z_distance_threshold', type=float, default=2., help='Minimum distance to push apart different parts of latent space that are semantically different.')
+
+	# absolute state reconstruction
+	parser.add_argument('--cummulative_computed_state_reconstruction_loss_weight', dest='cummulative_computed_state_reconstruction_loss_weight', type=float, default=0., \
+					 help='Weight to place on the cummulative_computed_state_reconstruction_loss.')
+	parser.add_argument('--teacher_forced_state_reconstruction_loss_weight', dest='teacher_forced_state_reconstruction_loss_weight', type=float, default=0.,\
+					 help='Weight to set on teacher_forced_state_reconstruction_loss_weight. ')
 
 	# Cross Domain Skill Transfer parameters. 
 	parser.add_argument('--discriminability_weight',dest='discriminability_weight',type=float,default=1.,help='Weight of discriminability loss in cross domain skill transfer.') 
