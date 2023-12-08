@@ -28,3 +28,6 @@ Toy_Batching.txt
 Experiments/PolicyManagers.py
 .DS_Store
 .idea/*
+
+TrainingLogs/*
+original_data/*

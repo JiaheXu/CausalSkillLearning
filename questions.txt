@@ -16,3 +16,41 @@ difference between PolicyManager_DMPBaselines & PolicyManager_JointFixEmbedTrans
 
 difference between baselineRL & downstreamRL & DMP policy_managers
 
+
+how to decied the number_policies
+
+ee_trajs ???
+
+
+settings below includes 2 different datasets? transfer learning? relation of source & target dataset
+
+
+detail of object-state why it is 14 dim (2 objects)
+robot dim is 7 ? 6joint + gripper?
+demo dim is 21 sum of above items?
+
+how 'RealWorldRigidJEEF' works,
+
+difference between
+'RealWorldRigidPreproc'
+'RealWorldRigid','RealWorldRigidRobot'
+'RealWorldRigidJEEF' 2objs how to extend to more objects
+
+when normalize data should we use min max in setting or min max in dataset
+
+training VTI doesn't need cost func?
+while training the high leavel-func will it update VTI?
+
+Dexmv running cmds
+
+collect data, how to normalize, what we need to acount, the whole procedure
+
+in pretrain progress, not cost or reward involved, how? imitation? how to compare to RL in SIM?
+
+How to get the similar clustering result on the official website
+
+get_trajectory_segment func? only one seg?
+
+def construct_dummy_latents(self, latent_z): why not setting the last one to 1?
+
+def set_extents(self): what are the extents???? what for??

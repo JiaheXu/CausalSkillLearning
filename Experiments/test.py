@@ -598,16 +598,16 @@ def main(args):
 
 	args = parse_arguments()
 	# Moving this up.
-	wandb.init(project=args.setting, dir=args.logdir, name=args.name)
+	# wandb.init(project=args.setting, dir=args.logdir, name=args.name)
 
 	master = Master(args)	
 	# Add argparse flags to wandb config.
-	wandb.config.update(args)
+	# wandb.config.update(args)
 
-	if args.test_code:
-		master.test()
-	else:
-		master.run()
+	# if args.test_code:
+	# 	master.test()
+	# else:
+	# 	master.run()
 
 if __name__=='__main__':
 	main(sys.argv)
