@@ -1,33 +1,32 @@
 what's the correct cmds for real robot data?
 
+For dexmv data?
+
+for DAPG data?
+
+for EE data?
+
+for objects only data?
+
+access to other data MIMI roboturck?
+
 Format of robot data? trajectories or actions or both?
 
-Which data includes multiple objects in environmental abstractions?
-
-How to combine data from different long horizon tasks?
-
-Seems ContinuousFactoredEncoderNetwork uses behavioral and environmental abstraction, it has many succeed class such as ContinuousSequentialFactoredEncoderNetwork & ContinuousFactoredSoftEncoderNetwor, what's the difference?
-
-Policy managers, which one is the best, what's the different between the ones with "joint" and the ones without it
-
-difference between PolicyManager_Joint & PolicyManager_Transfer & PolicyManager_Pretrain & PolicyManager_Imitation & PolicyManager_BatchPretrain.
-
-difference between PolicyManager_DMPBaselines & PolicyManager_JointFixEmbedTransfer & PolicyManager_CycleConsistencyTransfer & PolicyManager_JointTransfer
-
-difference between baselineRL & downstreamRL & DMP policy_managers
+Which data includes multiple objects in environmental abstractions? 2object only for now?
+how to include more that 2 objects?
 
 
-how to decied the number_policies
-
-ee_trajs ???
 
 
-settings below includes 2 different datasets? transfer learning? relation of source & target dataset
+pipeline? no need for cost in TVI training part? 
+pretrain_sub for training VTI, learntsub for policy?
+while learning policy will VTI be updated?
+In the future if we collect data for other tasks, do we need to retain the VTI again?
+in pretrain progress, not cost or reward involved, how? imitation? how to compare to RL in SIM?
 
-
-detail of object-state why it is 14 dim (2 objects)
-robot dim is 7 ? 6joint + gripper?
-demo dim is 21 sum of above items?
+How to verify the result of VTI clustering?
+How to get the similar clustering result on the official website? clustring with pics, how to change visualizer code.
+How to check the trained result?
 
 how 'RealWorldRigidJEEF' works,
 
@@ -36,24 +35,121 @@ difference between
 'RealWorldRigid','RealWorldRigidRobot'
 'RealWorldRigidJEEF' 2objs how to extend to more objects
 
-when normalize data should we use min max in setting or min max in dataset
 
-training VTI doesn't need cost func?
-while training the high leavel-func will it update VTI?
+traing params settings??
+ --variance_mode='QuadraticAnnealed' \
+ --initial_policy_variance=1. \
+ --final_policy_variance=0.0001 \
+ --policy_variance_decay_over=50000 \
+ --state_scale_factor=10. \
+ --input_corruption_noise=0.1 \
+ --teacher_forced_state_reconstruction_loss_weight=100. \
+ --cummulative_computed_state_reconstruction_loss_weight=10. \
 
-Dexmv running cmds
 
-collect data, how to normalize, what we need to acount, the whole procedure
-
-in pretrain progress, not cost or reward involved, how? imitation? how to compare to RL in SIM?
-
-How to get the similar clustering result on the official website
-
-get_trajectory_segment func? only one seg?
-
-def construct_dummy_latents(self, latent_z): why not setting the last one to 1?
-
+perplexity why set as 5 10 30 ?
 def set_extents(self): what are the extents???? what for??
 
-
 how to use evaluate()? visualize_robot_data? get_trajectory_and_latent_sets()? visualize_embedding_space()
+how to decied the number_policies
+
+normalize data (0,1) or (-1,1)
+
+
+in Master.py
+self.args.setting :
+	if self.args.setting in ['learntsub', 'joint']:
+	if self.args.batch_size > 1: 
+		self.policy_manager = PolicyManager_BatchJoint(self.args.number_policies, self.dataset, self.args)
+	else:
+		self.policy_manager = PolicyManager_Joint(self.args.number_policies, self.dataset, self.args)
+		
+	elif self.args.setting in ['queryjoint']:
+		self.policy_manager = PolicyManager_BatchJointQueryMode(self.args.number_policies, self.dataset, self.args)
+			
+	elif self.args.setting=='context':
+		# Assume we're going to run with batch size > 1. 
+		self.policy_manager = PolicyManager_BatchJoint(self.args.number_policies, self.dataset, self.args)
+
+	elif self.args.setting=='pretrain_sub':
+		if self.args.batch_size > 1: # Only setting batch manager for training.
+			self.policy_manager = PolicyManager_BatchPretrain(self.args.number_policies, self.dataset, self.args)
+		else:
+			self.policy_manager = PolicyManager_Pretrain(self.args.number_policies, self.dataset, self.args)
+
+
+args.setting = [ baselineRL & downstreamRL & DMP policy_managers & imitation ] use when ? How, setting value?
+
+
+
+settings below includes 2 different datasets? transfer learning? relation of source & target dataset
+left to right? 
+cross robot?
+
+collect data, how to normalize, what we need to acount, the whole procedure, include object goal pose?
+
+length of traj? freq? how about the noise? why need to manually add noise? For dextrous hands, noise might cuase failure
+how many traj for each task?
+dexmv 676 demos,
+real_robot < 100 demos
+
+length of task 10 ~ 20, too short?
+
+get_trajectory_segment func? only one seg? go through
+
+
+class PolicyManager_Pretrain(PolicyManager_BaseClass):
+def construct_dummy_latents(self, latent_z): why not setting the last one to 1?
+
+training info PerET ? CumET ? Extent?
+
+def batched_visualize_robot_data() how to use, go throughhow to check the output result 
+
+
+self.args.setting: left to right?
+
+cmds for these transering skills, cross robots
+		elif self.args.setting in ['transfer','cycle_transfer','fixembed','jointtransfer','jointcycletransfer','jointfixembed','jointfixcycle','densityjointtransfer','densityjointfixembedtransfer','downstreamtasktransfer']:
+
+			# Creating two copies of arguments, in case we're transferring between MIME left and MIME right.
+			source_args = copy.deepcopy(self.args)
+			target_args = copy.deepcopy(self.args)
+			source_args.single_hand = self.args.source_single_hand
+			target_args.single_hand = self.args.target_single_hand
+			source_args.ee_trajectories = self.args.source_ee_trajs
+			target_args.ee_trajectories = self.args.target_ee_trajs
+			if self.args.source_datadir is not None:
+				source_args.datadir = self.args.source_datadir
+			if self.args.target_datadir is not None:
+				target_args.datadir = self.args.target_datadir	
+	
+			source_dataset = return_dataset(source_args, data=self.args.source_domain)
+			target_dataset = return_dataset(target_args, data=self.args.target_domain)
+				
+			# # If we're creating a variation in the dataset: 
+			# if self.args.dataset_variation:
+			# 	target_dataset = return_dataset(self.args, data=self.args.target_domain, create_dataset_variation=create_dataset_variation)
+
+			if self.args.setting=='transfer':
+				self.policy_manager = PolicyManager_Transfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='cycle_transfer':
+				self.policy_manager = PolicyManager_CycleConsistencyTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)				
+			elif self.args.setting=='fixembed':
+				self.policy_manager = PolicyManager_FixEmbedCycleConTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='jointfixembed':
+				self.policy_manager = PolicyManager_JointFixEmbedTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='jointfixcycle':
+				self.policy_manager = PolicyManager_JointFixEmbedCycleTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='jointtransfer':
+				self.policy_manager = PolicyManager_JointTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='jointcycletransfer':
+				self.policy_manager = PolicyManager_JointCycleTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='densityjointtransfer':
+				self.policy_manager = PolicyManager_DensityJointTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='densityjointfixembedtransfer':
+				self.policy_manager = PolicyManager_DensityJointFixEmbedTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+			elif self.args.setting=='downstreamtasktransfer':
+				self.policy_manager = PolicyManager_DownstreamTaskTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
+
+		elif self.args.setting in ['iktrainer']:
+			self.policy_manager = PolicyManager_IKTrainer(self.dataset, self.args)
