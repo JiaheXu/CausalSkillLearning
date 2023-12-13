@@ -54,3 +54,6 @@ get_trajectory_segment func? only one seg?
 def construct_dummy_latents(self, latent_z): why not setting the last one to 1?
 
 def set_extents(self): what are the extents???? what for??
+
+
+how to use evaluate()? visualize_robot_data? get_trajectory_and_latent_sets()? visualize_embedding_space()
