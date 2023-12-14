@@ -284,6 +284,9 @@ class DexMV_Dataset(Dataset):
 		   
 		# Load file.
 		self.data_list = np.load(os.path.join(self.dataset_directory, self.getname() + "_DataFile_BaseNormalize.npy"), allow_pickle=True)
+		#print(self.dataset_directory, self.getname() + "_DataFile_BaseNormalize.npy")
+		
+		#print("self.data_list:\n", self.data_list)
 		# self.object_data_list = np.load(os.path.join(self.dataset_directory, self.getname() + "_Object_DataFile_BaseNormalize.npy"), allow_pickle=True)
 		self.filelist = np.load(os.path.join(self.dataset_directory, self.getname() + "_OrderedFileList.npy"), allow_pickle=True)
 		self.cumulative_num_demos = np.load(os.path.join(self.dataset_directory, self.getname() + "_Lengths.npy"), allow_pickle=True)
