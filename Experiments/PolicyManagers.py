@@ -10,11 +10,7 @@ from headers import *
 from PolicyNetworks import *
 # from RL_headers import *
 # from PPO_Utilities import PPOBuffer
-from Visualizers import BaxterVisualizer, SawyerVisualizer, FrankaVisualizer, ToyDataVisualizer, \
-	GRABVisualizer, GRABHandVisualizer, GRABArmHandVisualizer, DAPGVisualizer, \
-	RoboturkObjectVisualizer, RoboturkRobotObjectVisualizer,\
-	RoboMimicObjectVisualizer, RoboMimicRobotObjectVisualizer, DexMVVisualizer, \
-	FrankaKitchenVisualizer, FetchMOMARTVisualizer, DatasetImageVisualizer
+from Visualizers import DAPGVisualizer, DexMVVisualizer, DatasetImageVisualizer
 	# MocapVisualizer 
 
 # from Visualizers import *
@@ -28,14 +24,7 @@ torch.set_printoptions(sci_mode=False, precision=2)
 
 # Global data list
 global global_dataset_list 
-global_dataset_list = ['MIME','OldMIME','Roboturk','OrigRoboturk','FullRoboturk', \
-			'Mocap','OrigRoboMimic','RoboMimic','GRAB','GRABHand','GRABArmHand', 'GRABArmHandObject', \
-	  		'GRABObject', 'DAPG', 'DAPGHand', 'DAPGObject', 'DexMV', 'DexMVHand', 'DexMVObject', \
-			'RoboturkObjects','RoboturkRobotObjects','RoboMimicObjects','RoboMimicRobotObjects', \
-			'RoboturkMultiObjets', 'RoboturkRobotMultiObjects', \
-			'MOMARTPreproc', 'MOMART', 'MOMARTObject', 'MOMARTRobotObject', 'MOMARTRobotObjectFlat', \
-			'FrankaKitchenPreproc', 'FrankaKitchen', 'FrankaKitchenObject', 'FrankaKitchenRobotObject', \
-			'RealWorldRigid', 'RealWorldRigidRobot', 'RealWorldRigidJEEF', 'NDAX', 'NDAXMotorAngles']
+global_dataset_list = ['DAPG', 'DAPGHand', 'DAPGObject', 'DexMV', 'DexMVHand', 'DexMVObject', 'RealWorldRigid', 'RealWorldRigidRobot', 'RealWorldRigidJEEF']
 
 class PolicyManager_BaseClass():
 
@@ -58,34 +47,11 @@ class PolicyManager_BaseClass():
 
 		if self.args.setting=='imitation':
 			extent = self.dataset.get_number_task_demos(self.demo_task_index)
-		if (self.args.setting=='transfer' and isinstance(self, PolicyManager_Transfer)) or \
-			(self.args.setting=='cycle_transfer' and isinstance(self, PolicyManager_CycleConsistencyTransfer)) or \
-			(self.args.setting=='fixembed' and isinstance(self, PolicyManager_FixEmbedCycleConTransfer)) or \
-			(self.args.setting=='jointtransfer' and isinstance(self, PolicyManager_JointTransfer)) or \
-			(self.args.setting=='jointfixembed' and isinstance(self, PolicyManager_JointFixEmbedTransfer)) or \
-			(self.args.setting=='jointcycletransfer' and isinstance(self, PolicyManager_JointCycleTransfer)) or \
-			(self.args.setting=='jointfixcycle' and isinstance(self, PolicyManager_JointFixEmbedCycleTransfer)) or \
-			(self.args.setting=='densityjointtransfer' and isinstance(self, PolicyManager_DensityJointTransfer)) or \
-			(self.args.setting=='densityjointfixembedtransfer' and isinstance(self, PolicyManager_DensityJointFixEmbedTransfer)) or \
-			(self.args.setting=='iktrainer' and isinstance(self, PolicyManager_IKTrainer)) or \
-			(self.args.setting=='downstreamtasktransfer' and isinstance(self, PolicyManager_DownstreamTaskTransfer)):
-				extent = self.extent
 		else:
 			extent = len(self.dataset)-self.test_set_size
 
 		self.index_list = np.arange(0,extent)
 		self.initialize_plots()
-
-		# if self.args.setting in ['transfer','cycle_transfer','fixembed','jointtransfer','jointcycletransfer']:
-		if self.args.setting in ['jointtransfer'] and isinstance(self, PolicyManager_JointTransfer) or \
-			self.args.setting in ['jointfixembed'] and isinstance(self, PolicyManager_JointFixEmbedTransfer) or \
-			self.args.setting in ['jointcycletransfer'] and isinstance(self, PolicyManager_JointCycleTransfer) or \
-			self.args.setting in ['fixembed'] and isinstance(self, PolicyManager_FixEmbedCycleConTransfer) or \
-			self.args.setting in ['jointfixcycle'] and isinstance(self, PolicyManager_JointFixEmbedCycleTransfer) or \
-			self.args.setting in ['densityjointtransfer'] and isinstance(self, PolicyManager_DensityJointTransfer) or \
-			self.args.setting in ['densityjointfixembedtransfer'] and isinstance(self, PolicyManager_DensityJointFixEmbedTransfer) or \
-			self.args.setting in ['downstreamtasktransfer'] and isinstance(self, PolicyManager_DownstreamTaskTransfer):
-			self.load_domain_models()
 
 	def initialize_plots(self):
 		if self.args.name is not None:
@@ -96,46 +62,15 @@ class PolicyManager_BaseClass():
 			if not(os.path.isdir(logdir)):
 				os.mkdir(logdir)
 
-		if self.args.data in ['MIME','OldMIME'] and not(self.args.no_mujoco):
-			self.visualizer = BaxterVisualizer(args=self.args)
-			# self.state_dim = 16
-		
-		elif (self.args.data in ['Roboturk','OrigRoboturk','FullRoboturk']) and not(self.args.no_mujoco):			
-			self.visualizer = SawyerVisualizer()
-		elif (self.args.data in ['OrigRoboMimic','RoboMimic']) and not(self.args.no_mujoco):			
-			self.visualizer = FrankaVisualizer()
-
-		elif self.args.data=='Mocap':
-			self.visualizer = MocapVisualizer(args=self.args)
-		elif self.args.data in ['GRAB']:
-			self.visualizer = GRABVisualizer()
-		elif self.args.data in ['GRABHand']:
-			self.visualizer = GRABHandVisualizer(args=self.args)
-		elif self.args.data in ['GRABArmHand', 'GRABArmHandObject', 'GRABObject']:
-			self.visualizer = GRABArmHandVisualizer(args=self.args)		
-		elif self.args.data in ['DAPG', 'DAPGHand', 'DAPGObject']:
+		if self.args.data in ['DAPG', 'DAPGHand', 'DAPGObject']:
 			self.visualizer = DAPGVisualizer(args=self.args)
 		elif self.args.data in ['DexMV', 'DexMVHand', 'DexMVObject']:
 			self.visualizer = DexMVVisualizer(args=self.args)
-		elif self.args.data in ['RoboturkObjects']:		
-			self.visualizer = RoboturkObjectVisualizer(args=self.args)
-		elif self.args.data in ['RoboturkRobotObjects']:
-			self.visualizer = RoboturkRobotObjectVisualizer(args=self.args)
-		elif self.args.data in ['RoboMimicObjects']:
-			self.visualizer = RoboMimicObjectVisualizer(args=self.args)
-		elif self.args.data in ['RoboMimicRobotObjects']:
-			self.visualizer = RoboMimicRobotObjectVisualizer(args=self.args)
-		elif self.args.data in ['FrankaKitchenRobotObject']:
-			self.visualizer = FrankaKitchenVisualizer(args=self.args)
-		elif self.args.data in ['MOMARTRobotObject', 'MOMARTRobotObjectFlat']:			
-			if not hasattr(self, 'visualizer'):
-				self.visualizer = FetchMOMARTVisualizer(args=self.args)
-		elif self.args.data in ['RealWorldRigid', 'NDAX', 'NDAXMotorAngles']:
+		elif self.args.data in ['RealWorldRigid']:
 			self.visualizer = DatasetImageVisualizer(args=self.args)
 		else:
 			self.visualizer = ToyDataVisualizer()
 		
-
 		self.rollout_gif_list = []
 		self.gt_gif_list = []
 
@@ -149,63 +84,10 @@ class PolicyManager_BaseClass():
 
 	def collect_inputs(self, i, get_latents=False, special_indices=None, called_from_train=False):	
 
-		if self.args.data=='DeterGoal':
-			
-			if special_indices is not None:
-				i = special_indices
-
-			sample_traj, sample_action_seq = self.dataset[i]
-			latent_b_seq, latent_z_seq = self.dataset.get_latent_variables(i)
-
-			start = 0
-
-			if self.args.traj_length>0:
-				sample_action_seq = sample_action_seq[start:self.args.traj_length-1]
-				latent_b_seq = latent_b_seq[start:self.args.traj_length-1]
-				latent_z_seq = latent_z_seq[start:self.args.traj_length-1]
-				sample_traj = sample_traj[start:self.args.traj_length]	
-			else:
-				# Traj length is going to be -1 here. 
-				# Don't need to modify action sequence because it does have to be one step less than traj_length anyway.
-				sample_action_seq = sample_action_seq[start:]
-				sample_traj = sample_traj[start:]
-				latent_b_seq = latent_b_seq[start:]
-				latent_z_seq = latent_z_seq[start:]
-
-			# The trajectory is going to be one step longer than the action sequence, because action sequences are constructed from state differences. Instead, truncate trajectory to length of action sequence. 		
-			# Now manage concatenated trajectory differently - {{s0,_},{s1,a0},{s2,a1},...,{sn,an-1}}.
-			# concatenated_traj = self.concat_state_action(sample_traj, sample_action_seq)
-			# old_concatenated_traj = self.old_concat_state_action(sample_traj, sample_action_seq)
-			
-			# If the collect inputs function is being called from the train function, 
-			# Then we should corrupt the inputs based on how much the input_corruption_noise is set to. 
-			# If it's 0., then no corruption. 
-			corrupted_sample_action_seq = self.corrupt_inputs(sample_action_seq)
-			corrupted_sample_traj = self.corrupt_inputs(sample_traj)
-
-			concatenated_traj = self.concat_state_action(corrupted_sample_traj, corrupted_sample_action_seq)		
-			old_concatenated_traj = self.old_concat_state_action(corrupted_sample_traj, corrupted_sample_action_seq)
-		
-			if self.args.data=='DeterGoal':
-				self.conditional_information = np.zeros((self.args.condition_size))
-				self.conditional_information[self.dataset.get_goal(i)] = 1
-				self.conditional_information[4:] = self.dataset.get_goal_position[i]
-			else:
-				self.conditional_information = np.zeros((self.args.condition_size))
-
-			if get_latents:
-				return sample_traj, sample_action_seq, concatenated_traj, old_concatenated_traj, latent_b_seq, latent_z_seq
-			else:
-				return sample_traj, sample_action_seq, concatenated_traj, old_concatenated_traj
-
-		elif self.args.data in global_data_list:
+		if self.args.data in global_data_list:
 
 			# If we're imitating... select demonstrations from the particular task.
-			if self.args.setting=='imitation' and \
-				 (self.args.data in ['Roboturk','RoboMimic','RoboturkObjects','RoboturkRobotObjects',\
-					'RoboMimicObjects','RoboMimicRobotObjects']):
-				data_element = self.dataset.get_task_demo(self.demo_task_index, i)
-			else:
+			if self.args.setting=='imitation':
 				data_element = self.dataset[i]
 
 			if not(data_element['is_valid']):
@@ -222,24 +104,8 @@ class PolicyManager_BaseClass():
 
 			self.current_traj_len = len(trajectory)
 
-			if self.args.data in ['MIME','OldMIME','GRAB','GRABHand','GRABArmHand', 'GRABArmHandObject', 'GRABObject', 'DAPG', 'DAPGHand', 'DAPGObject', 'DexMV', 'DexMVHand', 'DexMVObject', 'RealWorldRigid']:
+			if self.args.data in ['DAPG', 'DAPGHand', 'DAPGObject', 'DexMV', 'DexMVHand', 'DexMVObject', 'RealWorldRigid']:
 				self.conditional_information = np.zeros((self.conditional_info_size))				
-			# elif self.args.data=='Roboturk' or self.args.data=='OrigRoboturk' or self.args.data=='FullRoboturk':
-			elif self.args.data in ['Roboturk','OrigRoboturk','FullRoboturk','OrigRoboMimic',\
-				'RoboMimic','RoboturkObjects','RoboturkRobotObjects', 'RoboMimicObjects', 'RoboMimicRobotObjects']:
-				robot_states = data_element['robot-state']
-				object_states = data_element['object-state']
-				self.current_task_for_viz = data_element['task-id']
-
-				self.conditional_information = np.zeros((self.conditional_info_size))
-				# Don't set this if pretraining / baseline.
-				if self.args.setting=='learntsub' or self.args.setting=='imitation':
-					self.conditional_information = np.zeros((len(trajectory),self.conditional_info_size))
-					self.conditional_information[:,:self.cond_robot_state_size] = robot_states
-					# Doing this instead of self.cond_robot_state_size: because the object_states size varies across demonstrations.
-					self.conditional_information[:,self.cond_robot_state_size:self.cond_robot_state_size+object_states.shape[-1]] = object_states	
-					# Setting task ID too.		
-					self.conditional_information[:,-self.number_tasks+data_element['task-id']] = 1.
 
 			# If the collect inputs function is being called from the train function, 
 			# Then we should corrupt the inputs based on how much the input_corruption_noise is set to. 
@@ -270,13 +136,6 @@ class PolicyManager_BaseClass():
 		# For every item in the epoch:
 		if self.args.setting=='imitation':
 			extent = self.dataset.get_number_task_demos(self.demo_task_index)
-		# if self.args.setting=='transfer' or self.args.setting=='cycle_transfer' or self.args.setting=='fixembed' or self.args.setting=='jointtransfer':
-		if self.args.setting in ['transfer','cycle_transfer','fixembed','jointtransfer','jointcycletransfer','jointfixembed','jointfixcycle','densityjointtransfer','densityjointfixembedtransfer','iktrainer']:
-			if self.args.debugging_datapoints>-1:
-				extent = self.args.debugging_datapoints
-				self.extent = self.args.debugging_datapoints
-			else:
-				extent = self.extent
 		else:
 			if self.args.debugging_datapoints>-1:				
 				extent = self.args.debugging_datapoints
@@ -434,41 +293,11 @@ class PolicyManager_BaseClass():
 		#####################################################
 		# Set visualizer object. 
 		#####################################################
-		if self.args.data in ['MIME','OldMIME']:
-			self.visualizer = BaxterVisualizer(args=self.args)
-			# self.state_dim = 16
-		elif (self.args.data in ['Roboturk','OrigRoboturk','FullRoboturk']) and not(self.args.no_mujoco):			
-			self.visualizer = SawyerVisualizer()
-		elif (self.args.data in ['OrigRoboMimic','RoboMimic']) and not(self.args.no_mujoco):			
-			self.visualizer = FrankaVisualizer()
-		elif self.args.data=='Mocap':
-			self.visualizer = MocapVisualizer(args=self.args)
-			# Because there are just more invalid DP's in Mocap.
-			self.N = 100
-		elif self.args.data in ['RoboturkObjects']:
-			self.visualizer = RoboturkObjectVisualizer(args=self.args)
-		elif self.args.data in ['GRABHand']:
-			self.visualizer = GRABHandVisualizer(args=self.args)
-			self.N = 200
-		elif self.args.data in ['GRABArmHand', 'GRABArmHandObject', 'GRABObject']:
-			self.visualizer = GRABArmHandVisualizer(args=self.args)
-			self.N = 200
-		elif self.args.data in ['DAPG', 'DAPGHand', 'DAPGObject']:
+		if self.args.data in ['DAPG', 'DAPGHand', 'DAPGObject']:
 			self.visualizer = DAPGVisualizer(args=self.args)		
 		elif self.args.data in ['DexMV', 'DexMVHand', 'DexMVObject']:
 			self.visualizer = DexMVVisualizer(args=self.args)		
-		elif self.args.data in ['RoboturkRobotObjects']:		
-			self.visualizer = RoboturkRobotObjectVisualizer(args=self.args)
-		elif self.args.data in ['RoboMimicObjects']:
-			self.visualizer = RoboMimicObjectVisualizer(args=self.args)
-		elif self.args.data in ['RoboMimicRobotObjects']:
-			self.visualizer = RoboMimicRobotObjectVisualizer(args=self.args)			
-		elif self.args.data in ['FrankaKitchenRobotObject']:
-			self.visualizer = FrankaKitchenVisualizer(args=self.args)
-		elif self.args.data in ['MOMARTRobotObject', 'MOMARTRobotObjectFlat']:
-			if not hasattr(self, 'visualizer'):
-				self.visualizer = FetchMOMARTVisualizer(args=self.args)
-		elif self.args.data in ['RealWorldRigid', 'NDAX', 'NDAXMotorAngles']:
+		elif self.args.data in ['RealWorldRigid']:
 			self.visualizer = DatasetImageVisualizer(args=self.args)
 		else: 
 			self.visualizer = ToyDataVisualizer()
@@ -1082,10 +911,7 @@ class PolicyManager_BaseClass():
 			task_id = None
 			env_name = None
 		else:			
-			if self.args.data in ['NDAX', 'NDAXMotorAngles']:
-				task_id = indexed_data_element['task_id']
-			else:
-				task_id = indexed_data_element['task-id']
+			task_id = indexed_data_element['task-id']
 
 			# print("EMBED in grv")
 			# embed()
@@ -1114,11 +940,7 @@ class PolicyManager_BaseClass():
 			unnorm_gt_trajectory = trajectory
 			unnorm_pred_trajectory = trajectory_rollout
 
-		if self.args.data == 'Mocap':
-			# Get animation object from dataset. 
-			animation_object = self.dataset[i]['animation']
-
-		print("We are in the PM visualizer function.")
+		print("We are in the PolicyManager_base visualizer function.")
 
 		# Set task ID if the visualizer needs it. 
 		# if indexed_data_element is not None and self.args.data == 'DAPG':
@@ -1127,13 +949,6 @@ class PolicyManager_BaseClass():
 		# elif indexed_data_element is None or ('task_id' not in indexed_data_element.keys()):
 		# 	task_id = None
 		# 	env_name = None
-
-		if self.args.data=='Mocap':
-			# Get animation object from dataset. 
-			animation_object = self.dataset[i]['animation']
-
-		# print("We are in the PM visualizer function.")
-		# embed()
 
 		########################################
 		# 4a) Run unnormalized ground truth trajectory in visualizer. 
@@ -1805,199 +1620,8 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		elif self.args.normalization=='minmax':
 			self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
 			self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-
-			if self.args.data in ['MOMARTRobotObjectFlat']:
-				self.norm_denom_value[self.norm_denom_value==0.]=1.
-
-		if self.args.data in ['MIME','OldMIME']:
-			self.state_size = 16			
-			self.state_dim = 16
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.latent_z_dimensionality = self.args.z_dimensions
-			self.number_layers = self.args.number_layers
-			self.traj_length = self.args.traj_length
-			self.number_epochs = self.args.epochs
-
-			if self.args.ee_trajectories:
-				if self.args.normalization=='meanvar':
-					self.norm_sub_value = np.load("Statistics/MIME/MIME_EE_Mean.npy")
-					self.norm_denom_value = np.load("Statistics/MIME/MIME_EE_Var.npy")
-				elif self.args.normalization=='minmax':
-					self.norm_sub_value = np.load("Statistics/MIME/MIME_EE_Min.npy")
-					self.norm_denom_value = np.load("Statistics/MIME/MIME_EE_Max.npy")
-			else:
-				if self.args.normalization=='meanvar':
-					self.norm_sub_value = np.load("Statistics/MIME/MIME_Orig_Mean.npy")
-					self.norm_denom_value = np.load("Statistics/MIME/MIME_Orig_Var.npy")
-				elif self.args.normalization=='minmax':
-					self.norm_sub_value = np.load("Statistics/MIME/MIME_Orig_Min.npy")
-					self.norm_denom_value = np.load("Statistics/MIME/MIME_Orig_Max.npy") - self.norm_sub_value
-
-			# Max of robot_state + object_state sizes across all Baxter environments. 			
-			self.cond_robot_state_size = 60
-			self.cond_object_state_size = 25
-			self.test_set_size = 50
-			self.conditional_info_size = self.cond_robot_state_size+self.cond_object_state_size
-
-		# elif self.args.data=='Roboturk' or self.args.data=='OrigRoboturk' or self.args.data=='FullRoboturk':
-		elif self.args.data in ['Roboturk','OrigRoboturk','FullRoboturk','RoboMimic','OrigRoboMimic']:
-			if self.args.gripper:
-				self.state_size = 8
-				self.state_dim = 8
-			else:
-				self.state_size = 7
-				self.state_dim = 7		
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.number_layers = self.args.number_layers
-			self.traj_length = self.args.traj_length
-
-			if self.args.data in ['Roboturk','OrigRoboturk','FullRoboturk']:
-				stat_dir_name = "Roboturk"
-			elif self.args.data in ['RoboMimic','OrigRoboMimic']:
-				stat_dir_name = "Robomimic"
-				self.test_set_size = 50
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-
-			# Max of robot_state + object_state sizes across all sawyer environments. 
-			# Robot size always 30. Max object state size is... 23. 
-			self.cond_robot_state_size = 30			
-			self.cond_object_state_size = 23			
-			self.conditional_info_size = self.cond_robot_state_size+self.cond_object_state_size
-
-		elif self.args.data=='Mocap':
-			self.state_size = 22*3
-			self.state_dim = 22*3	
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-
-		elif self.args.data in ['GRAB']:
-			
-			self.state_size = 24
-			self.state_dim = 24
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 40
-			# stat_dir_name = self.args.data
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
 		
-		elif self.args.data in ['GRABHand']:
-			
-			self.state_size = 120
-			self.state_dim = 120
-
-			if self.args.single_hand in ['left', 'right']:
-				self.state_dim //= 2
-				self.state_size //= 2
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 40
-			# stat_dir_name = self.args.data
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-
-			# Modify to zero out for now..
-			if self.args.skip_wrist:
-				self.norm_sub_value[:3] = 0.
-				self.norm_denom_value[:3] = 1.
-		
-		elif self.args.data in ['GRABArmHand']:
-			
-			if self.args.position_normalization == 'pelvis':
-				self.state_size = 144
-				self.state_dim = 144
-
-				if self.args.single_hand in ['left', 'right']:
-					self.state_dim //= 2
-					self.state_size //= 2
-			else:
-				self.state_size = 147
-				self.state_dim = 147
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 40
-			# stat_dir_name = self.args.data
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-		
-		elif self.args.data in ['GRABArmHandObject']:
-			
-			self.state_size = 96
-			self.state_dim = 96
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 40
-			# stat_dir_name = self.args.data
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-
-		elif self.args.data in ['GRABObject']:
-			
-			self.state_size = 6
-			self.state_dim = 6
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 40
-			# stat_dir_name = self.args.data
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-		
-		elif self.args.data in ['DAPG']:
+		if self.args.data in ['DAPG']:
 			
 			self.state_size = 51
 			self.state_dim = 51
@@ -2134,132 +1758,6 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 				self.norm_denom_value[np.where(self.norm_denom_value==0)] = 1
 			self.norm_sub_value = self.norm_sub_value[:self.state_dim]
 			self.norm_denom_value = self.norm_denom_value[:self.state_dim]
-
-		elif self.args.data in ['RoboturkObjects','RoboMimicObjects','MOMARTObject']:
-			# self.state_size = 14
-			# self.state_dim = 14
-
-			# Set state size to 7 for now; because we're not using the relative pose.
-			self.state_size = 7
-			self.state_dim = 7
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50
-
-			# stat_dir_name = "RoboturkObjects"
-			# stat_dir_name = self.args.data			
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-
-		elif self.args.data in ['RoboturkRobotObjects','RoboMimicRobotObjects']:
-			# self.state_size = 14
-			# self.state_dim = 14
-
-			# Set state size to 7 for now; because we're not using the relative pose.
-			self.state_size = 15
-			self.state_dim = 15
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50
-
-			# stat_dir_name = "RoboturkRobotObjects"			
-			# stat_dir_name = self.args.data
-
-			# if self.args.normalization=='meanvar':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Mean.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Var.npy".format(stat_dir_name))
-			# elif self.args.normalization=='minmax':
-			# 	self.norm_sub_value = np.load("Statistics/{0}/{0}_Min.npy".format(stat_dir_name))
-			# 	self.norm_denom_value = np.load("Statistics/{0}/{0}_Max.npy".format(stat_dir_name)) - self.norm_sub_value
-
-		elif self.args.data in ['RoboturkRobotMultiObjects', 'RoboMimiRobotMultiObjects']:
-
-			# Set state size to 7 for now; because we're not using the relative pose.
-			self.state_size = 22
-			self.state_dim = 22
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50			
-
-		elif self.args.data in ['MOMART']:
-
-			self.state_size = 28
-			self.state_dim = 28
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50			
-
-		elif self.args.data in ['MOMARTRobotObject', 'MOMARTRobotObjectFlat']:
-
-			self.state_size = 28
-			self.state_dim = 28
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50	
-
-		elif self.args.data in ['MOMARTRobotObjectFlat']:
-
-			self.state_size = 506
-			self.state_dim = 506			
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50	
-
-		elif self.args.data in ['FrankaKitchen']:
-
-			self.state_size = 30
-			self.state_dim = 30
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50			
-
-		elif self.args.data in ['FrankaKitchenRobotObject']:
-
-			self.state_size = 30
-			self.state_dim = 30
-
-			self.input_size = 2*self.state_size
-			self.hidden_size = self.args.hidden_size
-			self.output_size = self.state_size
-			self.traj_length = self.args.traj_length			
-			self.conditional_info_size = 0
-			self.test_set_size = 50			
-
-			# print("FK Embed")
-			# embed()
 			
 		elif self.args.data in ['RealWorldRigid', 'RealWorldRigidRobot']:
 
@@ -2304,32 +1802,6 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			self.norm_sub_value[10:14] = 0.
 			self.norm_sub_value[17:20] = 0.
 			self.norm_sub_value[24:] = 0.
-
-		elif self.args.data in ['NDAX']:
-
-			self.state_size = 13
-			self.state_dim = 13
-			
-			# Set orientation dimensions to be unnormalized.
-			self.norm_sub_value[10:] = 0.
-			self.norm_denom_value[10:] = 1.
-
-		elif self.args.data in ['NDAXMotorAngles']:
-
-			self.state_size = 6
-			self.state_dim = 6
-
-
-			self.norm_denom_value = self.norm_denom_value[:6]
-			self.norm_sub_value = self.norm_sub_value[:6]
-
-
-		elif self.args.data in ['RealWorldRigidHuman']:
-
-			self.state_size = 77
-			self.state_dim = 77
-			
-			# Set orientation dimensions to be unnormalized.
 			
 
 		self.input_size = 2*self.state_size
@@ -2752,8 +2224,6 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			concatenated_traj = self.concat_state_action(sample_traj, sample_action_seq)
 
 			return concatenated_traj, sample_action_seq, sample_traj
-		
-		# elif self.args.data in ['MIME','OldMIME','Roboturk','OrigRoboturk','FullRoboturk','Mocap','OrigRoboMimic','RoboMimic']:
 	
 		elif self.args.data in global_dataset_list:
 		
@@ -3092,39 +2562,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		# 	# Step in environment with action.
 		# 	# Update inputs with new state and previously executed action. 
 
-		if self.args.data in ['ContinuousNonZero','DirContNonZero','ToyContext']:
-			self.state_dim = 2
-			self.rollout_timesteps = 5
-		elif self.args.data in ['MIME','OldMIME']:
-			self.state_dim = 16
-			self.rollout_timesteps = self.traj_length
-		elif self.args.data in ['Roboturk','OrigRoboturk','FullRoboturk','OrigRoboMimic','RoboMimic']:
-			self.state_dim = 8
-			self.rollout_timesteps = self.traj_length
-		elif self.args.data in ['GRAB']:
-			self.state_dim = 24
-			self.rollout_timesteps = self.traj_length
-		elif self.args.data in ['GRABArmHand']:
-			if self.args.position_normalization == 'pelvis':
-				self.state_dim = 144
-				if self.args.single_hand in ['left', 'right']:
-					self.state_dim //= 2
-			else:
-				self.state_dim = 147
-			self.rollout_timesteps = self.traj_length
-		elif self.args.data in ['GRABArmHandObject']:
-			self.state_size = 96
-			self.state_dim = 96
-			self.rollout_timesteps = self.traj_length
-		elif self.args.data in ['GRABObject']:
-			self.state_dim = 6
-			self.rollout_timesteps = self.traj_length
-		elif self.args.data in ['GRABHand']:
-			self.state_dim = 120
-			if self.args.single_hand in ['left', 'right']:
-				self.state_dim //= 2
-			self.rollout_timesteps = self.traj_length
-		elif self.args.data in ['DAPG']:
+		if self.args.data in ['DAPG']:
 			self.state_dim = 51
 			self.rollout_timesteps = self.traj_length
 		elif self.args.data in ['DAPGHand']:
@@ -3332,9 +2770,6 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 		np.set_printoptions(suppress=True,precision=2)
 
-		if self.args.data in ['ContinuousNonZero','DirContNonZero','ToyContext']:
-			self.visualize_embedding_space(suffix=suffix)
-
 		if self.args.data in global_dataset_list:
 
 			print("Running Evaluation of State Distances on small test set.")
@@ -3393,66 +2828,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 		self.latent_z_set = np.zeros((self.N,self.latent_z_dimensionality))
 			
-		if self.args.setting=='transfer' or self.args.setting=='cycle_transfer' or self.args.setting=='fixembed':
-			if self.args.data in ['ContinuousNonZero','DirContNonZero','ToyContext']:
-				self.state_dim = 2
-				self.rollout_timesteps = 5		
-			if self.args.data in ['MIME','OldMIME']:
-				self.state_dim = 16
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['Roboturk','OrigRoboturk','FullRoboturk','OrigRoboMimic','RoboMimic']:
-				self.state_dim = 8
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['GRAB']:
-				self.state_dim = 24
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['GRABArmHand']:
-				if self.args.position_normalization == 'pelvis':
-					self.state_dim = 144
-					if self.args.single_hand in ['left', 'right']:
-						self.state_dim //= 2
-				else:
-					self.state_dim = 147
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['GRABArmHandObject']:
-				self.state_dim = 96
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['GRABObject']:
-				self.state_dim = 6
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['GRABHand']:
-				self.state_dim = 126
-				if self.args.single_hand in ['left', 'right']:
-					self.state_dim //= 2
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['DAPG']:
-				self.state_dim = 51
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['DAPGHand']:
-				self.state_dim = 30
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['DAPGObject']:
-				self.state_dim = 21
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['DexMV']:
-				self.state_dim = 43
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['DexMVHand']:
-				self.state_dim = 30
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['DexMVObject']:
-				self.state_dim = 13
-				self.rollout_timesteps = self.traj_length
-			if self.args.data in ['RoboturkObjects']:
-				# Now switching to using 7 dimensions instead of 14, so as to not use relative pose.
-				self.state_dim = 7
-				# self.state_dim = 14
-				self.rollout_timesteps = self.traj_length
-
-			self.trajectory_set = np.zeros((self.N, self.rollout_timesteps, self.state_dim))
-
-		else:
-			self.trajectory_set = []
+		self.trajectory_set = []
 		# self.gt_trajectory_set = np.zeros((self.N, self., self.state_dim))
 		
 		self.gt_trajectory_set = []
@@ -3750,28 +3126,7 @@ class PolicyManager_BatchPretrain(PolicyManager_Pretrain):
 
 	def get_trajectory_segment(self, i):
 	
-		if self.args.data in ['ContinuousNonZero','DirContNonZero','ToyContext','DeterGoal']:
-			
-			# Sample trajectory segment from dataset. 
-			sample_traj, sample_action_seq = self.dataset[i:i+self.args.batch_size]
-			
-			# print("Getting data points from: ",i, " to: ", i+self.args.batch_size)			
-
-			# Subsample trajectory segment. 		
-			start_timepoint = np.random.randint(0,self.args.traj_length-self.traj_length)
-			end_timepoint = start_timepoint + self.traj_length
-			# The trajectory is going to be one step longer than the action sequence, because action sequences are constructed from state differences. Instead, truncate trajectory to length of action sequence. 
-			sample_traj = sample_traj[:, start_timepoint:end_timepoint]	
-			sample_action_seq = sample_action_seq[:, start_timepoint:end_timepoint-1]
-
-			self.current_traj_len = self.traj_length
-
-			# Now manage concatenated trajectory differently - {{s0,_},{s1,a0},{s2,a1},...,{sn,an-1}}.
-			concatenated_traj = self.concat_state_action(sample_traj, sample_action_seq)
-
-			return concatenated_traj.transpose((1,0,2)), sample_action_seq.transpose((1,0,2)), sample_traj.transpose((1,0,2))
-				
-		elif self.args.data in global_dataset_list:
+		if self.args.data in global_dataset_list:
 
 			if self.args.data in ['MIME','OldMIME'] or self.args.data=='Mocap':
 				# data_element = self.dataset[i:i+self.args.batch_size]

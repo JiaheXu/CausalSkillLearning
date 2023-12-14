@@ -22,72 +22,6 @@ def return_dataset(args, data=None, create_dataset_variation=False):
 	if data is not None:
 		args.data = data
 
-	# Define Data Loader.
-	############################
-	if args.data=='ContinuousNonZero':
-		dataset = DataLoaders.ContinuousNonZeroToyDataset(args.datadir, create_dataset_variation=create_dataset_variation)
-	elif args.data=='DeterGoal':
-		dataset = DataLoaders.DeterministicGoalDirectedDataset(args.datadir)			
-	elif args.data=='DirContNonZero':
-		dataset = DataLoaders.ContinuousDirectedNonZeroToyDataset(args.datadir)
-	elif args.data=='ToyContext':
-		dataset = DataLoaders.ToyContextDataset(args.datadir)
-	############################
-	elif args.data=='OldMIME':		
-		dataset = MIME_DataLoader.MIME_NewDataset(args, short_traj=args.short_trajectories)
-	elif args.data=='MIME':
-		if args.single_hand is None:
-			dataset = MIME_DataLoader.MIME_NewMetaDataset(args, short_traj=args.short_trajectories, traj_length_threshold=args.dataset_traj_length_limit)
-		else:
-			dataset = MIME_DataLoader.MIME_OneHandedDataset(args, short_traj=args.short_trajectories, traj_length_threshold=args.dataset_traj_length_limit)
-	############################			
-	elif args.data=='Roboturk':		
-		dataset = Roboturk_DataLoader.Roboturk_NewSegmentedDataset(args)
-	elif args.data=='OrigRoboturk':
-		dataset = Roboturk_DataLoader.Roboturk_Dataset(args)
-	elif args.data=='FullRoboturk':
-		dataset = Roboturk_DataLoader.Roboturk_FullDataset(args)
-	elif args.data=='RoboturkObjects':
-		dataset = Roboturk_DataLoader.Roboturk_ObjectDataset(args)
-	elif args.data=='RoboturkRobotObjects':
-		dataset = Roboturk_DataLoader.Roboturk_RobotObjectDataset(args)	
-	elif args.data=='RoboturkMultiObjects':
-		dataset = Roboturk_DataLoader.Roboturk_MultiObjectDataset(args)	
-	elif args.data=='RoboturkRobotMultiObjects':
-		dataset = Roboturk_DataLoader.Roboturk_RobotMultiObjectDataset(args)	
-	############################
-	elif args.data=='Mocap':
-		dataset = Mocap_DataLoader.Mocap_Dataset(args)
-	############################		
-	elif args.data=='OrigRoboMimic':
-		dataset = Robomimic_DataLoaders.OrigRobomimic_Dataset(args)
-	elif args.data=='RoboMimic':
-		dataset = Robomimic_DataLoaders.Robomimic_Dataset(args)
-	elif args.data=='RoboMimicObjects':
-		dataset = Robomimic_DataLoaders.Robomimic_ObjectDataset(args)
-	elif args.data=='RoboMimicRobotObjects':
-		dataset = Robomimic_DataLoaders.Robomimic_RobotObjectDataset(args)
-	############################
-	elif args.data=='GRABPreproc':
-		dataset = GRAB_DataLoader.GRAB_PreDataset(args)
-	elif args.data=='GRAB':
-		dataset = GRAB_DataLoader.GRAB_Dataset(args)
-	elif args.data=='GRABArmHandPreproc':
-		dataset = GRAB_DataLoader.GRABArmHand_PreDataset(args)
-	elif args.data=='GRABArmHand':
-		dataset = GRAB_DataLoader.GRABArmHand_Dataset(args)
-	elif args.data=='GRABHandPreproc':
-		dataset = GRAB_DataLoader.GRABHand_PreDataset(args)
-	elif args.data=='GRABHand':
-		dataset = GRAB_DataLoader.GRABHand_Dataset(args)
-	elif args.data=='GRABArmHandObjectPreproc':
-		dataset = GRAB_DataLoader.GRABArmHandObject_PreDataset(args)
-	elif args.data=='GRABArmHandObject':
-		dataset = GRAB_DataLoader.GRABArmHandObject_Dataset(args)
-	elif args.data=='GRABObjectPreproc':
-		dataset = GRAB_DataLoader.GRABObject_PreDataset(args)
-	elif args.data=='GRABObject':
-		dataset = GRAB_DataLoader.GRABObject_Dataset(args)
 	############################
 	elif args.data in ['DAPGPreproc', 'DAPGHandPreproc', 'DAPGObjectPreproc']:
 		dataset = DAPG_DataLoader.DAPG_PreDataset(args)
@@ -106,26 +40,6 @@ def return_dataset(args, data=None, create_dataset_variation=False):
 		dataset = DexMV_DataLoader.DexMVHand_Dataset(args)
 	elif args.data=='DexMVObject':
 		dataset = DexMV_DataLoader.DexMV_ObjectDataset(args)
-	############################
-	elif args.data=='MOMARTPreproc':
-		dataset = MOMART_DataLoader.OrigMOMART_Dataset(args)
-	elif args.data=='MOMART':
-		dataset = MOMART_DataLoader.MOMART_Dataset(args)
-	elif args.data=='MOMARTObject':
-		dataset = MOMART_DataLoader.MOMART_ObjectDataset(args)
-	elif args.data=='MOMARTRobotObject':
-		dataset = MOMART_DataLoader.MOMART_RobotObjectDataset(args)
-	
-	############################
-	elif args.data=='FrankaKitchenPreproc':
-		dataset = FrankaKitchen_DataLoader.OrigFrankaKitchen_Dataset(args)
-	elif args.data=='FrankaKitchen':
-		dataset = FrankaKitchen_DataLoader.FrankaKitchen_Dataset(args)
-	elif args.data=='FrankaKitchenObject':
-		dataset = FrankaKitchen_DataLoader.FrankaKitchen_ObjectDataset(args)
-	elif args.data=='FrankaKitchenRobotObject':
-		dataset = FrankaKitchen_DataLoader.FrankaKitchen_RobotObjectDataset(args)
-
 	############################	
 	elif args.data=='RealWorldRigidPreproc':
 		dataset = RealWorldRigid_DataLoader.RealWorldRigid_PreDataset(args)
@@ -133,11 +47,6 @@ def return_dataset(args, data=None, create_dataset_variation=False):
 		dataset = RealWorldRigid_DataLoader.RealWorldRigid_Dataset(args)
 	elif args.data in ['RealWorldRigidJEEF']:
 		dataset = RealWorldRigid_DataLoader.RealWorldRigid_JointEEFDataset(args)
-	############################
-	elif args.data=='NDAXPreproc':
-		dataset = NDAX_DataLoader.NDAXInterface_PreDataset(args)
-	elif args.data in ['NDAX', 'NDAXMotorAngles']:
-		dataset = NDAX_DataLoader.NDAXInterface_Dataset(args)
 	############################
 	elif args.data=='RealWorldRigidHumanPreproc':
 		dataset = RealWorldRigidHuman_DataLoader.RealWorldRigidHuman_PreDataset(args)
