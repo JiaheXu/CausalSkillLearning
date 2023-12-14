@@ -7,9 +7,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from headers import *
-import DataLoaders, MIME_DataLoader, Roboturk_DataLoader, Mocap_DataLoader, Robomimic_DataLoaders, \
-	  GRAB_DataLoader, DAPG_DataLoader, DexMV_DataLoader, MOMART_DataLoader, FrankaKitchen_DataLoader, \
-		RealWorldRigid_DataLoader, NDAX_DataLoader
+import DataLoaders,  DAPG_DataLoader, DexMV_DataLoader, RealWorldRigid_DataLoader
 from PolicyManagers import *
 import TestClass
 import faulthandler
