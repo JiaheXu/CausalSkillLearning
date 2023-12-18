@@ -70,7 +70,7 @@ python3 dataset_test.py \
  --teacher_forced_state_reconstruction_loss_weight=100. \
  --cummulative_computed_state_reconstruction_loss_weight=10. \
  --logdir=/ws/CausalSkillLearning/TrainingLogs/ \
- --datadir=/ws/CausalSkillLearning/DATA/DexMV/demonstrations/
+ --datadir=/ws/CausalSkillLearning/demonstrations/
 
  
  
@@ -82,14 +82,14 @@ python3 Master.py \
  --var_skill_length=1 \
  --number_layers=3 \
  --hidden_size=24 \
- --batch_size=32 \
+ --batch_size=512 \
  --no_mujoco=1 \
  --seed=0 \
  --epsilon_from=1.0 \
  --epsilon_to=0.1 \
  --epsilon_over=50000 \
  --display_freq=2000 \
- --epochs=10 \
+ --epochs=100000 \
  --save_freq=2000 \
  --smoothen=0 \
  --task_based_shuffling=0 \
@@ -108,3 +108,38 @@ python3 Master.py \
  --cummulative_computed_state_reconstruction_loss_weight=10. \
  --logdir=/ws/CausalSkillLearning/TrainingLogs/ \
  --datadir=/ws/CausalSkillLearning/demonstrations/
+  
+########################################################## real_robot_data
+CUDA_VISIBLE_DEVICES=0 python3 Master.py \
+ --train=1 \
+ --setting=pretrain_sub \
+ --name=real_robot_data_1214 \
+ --data=RealWorldRigid \
+ --var_skill_length=1 \
+ --number_layers=3 \
+ --hidden_size=24 \
+ --batch_size=32 \
+ --no_mujoco=1 \
+ --seed=0 \
+ --epsilon_from=1.0 \
+ --epsilon_to=0.1 \
+ --epsilon_over=50000 \
+ --display_freq=2000 \
+ --epochs=100000 \
+ --save_freq=2000 \
+ --smoothen=0 \
+ --task_based_shuffling=0 \
+ --z_dimensions=16 \
+ --normalization=minmax \
+ --split_stream_encoder=1 \
+ --variance_mode='QuadraticAnnealed' \
+ --initial_policy_variance=1. \
+ --final_policy_variance=0.0001 \
+ --policy_variance_decay_over=50000 \
+ --state_scale_factor=10. \
+ --input_corruption_noise=0.1 \
+ --subpolicy_input_dropout=0.2 \
+ --teacher_forced_state_reconstruction_loss_weight=100. \
+ --cummulative_computed_state_reconstruction_loss_weight=10. \
+ --datadir=/ws/CausalSkillLearning/NewRealWorldRigidRelPose/ \
+ --logdir=/ws/CausalSkillLearning/TrainingLogs/
