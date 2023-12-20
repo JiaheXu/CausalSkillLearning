@@ -8,6 +8,9 @@
 
 from headers import *
 import DataLoaders,  DAPG_DataLoader, DexMV_DataLoader, RealWorldRigid_DataLoader
+
+import MAGI_DataLoader
+
 from PolicyManagers import *
 import TestClass
 import faulthandler
@@ -15,294 +18,18 @@ import faulthandler
 f = open("SegFDebug2.txt","w+")
 faulthandler.enable(f)
 
-def return_dataset(args, data=None, create_dataset_variation=False):
+def return_dataset(args, data="MAGI", create_dataset_variation=False):
 	
 	# The data parameter overrides the data in args.data. 
 	# This is so that we can call return_dataset with source and target data for transfer setting.
-	if data is not None:
+	dataset = None
+	if data in ["MAGIPreproc"]:
 		args.data = data
-
-	# Define Data Loader.
-	############################
-	if args.data=='ContinuousNonZero':
-		dataset = DataLoaders.ContinuousNonZeroToyDataset(args.datadir, create_dataset_variation=create_dataset_variation)
-	elif args.data=='DeterGoal':
-		dataset = DataLoaders.DeterministicGoalDirectedDataset(args.datadir)			
-	elif args.data=='DirContNonZero':
-		dataset = DataLoaders.ContinuousDirectedNonZeroToyDataset(args.datadir)
-	elif args.data=='ToyContext':
-		dataset = DataLoaders.ToyContextDataset(args.datadir)
-	############################
-	elif args.data=='OldMIME':		
-		dataset = MIME_DataLoader.MIME_NewDataset(args, short_traj=args.short_trajectories)
-	elif args.data=='MIME':
-		if args.single_hand is None:
-			dataset = MIME_DataLoader.MIME_NewMetaDataset(args, short_traj=args.short_trajectories, traj_length_threshold=args.dataset_traj_length_limit)
-		else:
-			dataset = MIME_DataLoader.MIME_OneHandedDataset(args, short_traj=args.short_trajectories, traj_length_threshold=args.dataset_traj_length_limit)
-	############################			
-	elif args.data=='Roboturk':		
-		dataset = Roboturk_DataLoader.Roboturk_NewSegmentedDataset(args)
-	elif args.data=='OrigRoboturk':
-		dataset = Roboturk_DataLoader.Roboturk_Dataset(args)
-	elif args.data=='FullRoboturk':
-		dataset = Roboturk_DataLoader.Roboturk_FullDataset(args)
-	elif args.data=='RoboturkObjects':
-		dataset = Roboturk_DataLoader.Roboturk_ObjectDataset(args)
-	elif args.data=='RoboturkRobotObjects':
-		dataset = Roboturk_DataLoader.Roboturk_RobotObjectDataset(args)	
-	elif args.data=='RoboturkMultiObjects':
-		dataset = Roboturk_DataLoader.Roboturk_MultiObjectDataset(args)	
-	elif args.data=='RoboturkRobotMultiObjects':
-		dataset = Roboturk_DataLoader.Roboturk_RobotMultiObjectDataset(args)	
-	############################
-	elif args.data=='Mocap':
-		dataset = Mocap_DataLoader.Mocap_Dataset(args)
-	############################		
-	elif args.data=='OrigRoboMimic':
-		dataset = Robomimic_DataLoaders.OrigRobomimic_Dataset(args)
-	elif args.data=='RoboMimic':
-		dataset = Robomimic_DataLoaders.Robomimic_Dataset(args)
-	elif args.data=='RoboMimicObjects':
-		dataset = Robomimic_DataLoaders.Robomimic_ObjectDataset(args)
-	elif args.data=='RoboMimicRobotObjects':
-		dataset = Robomimic_DataLoaders.Robomimic_RobotObjectDataset(args)
-	############################
-	elif args.data=='GRABPreproc':
-		dataset = GRAB_DataLoader.GRAB_PreDataset(args)
-	elif args.data=='GRAB':
-		dataset = GRAB_DataLoader.GRAB_Dataset(args)
-	elif args.data=='GRABArmHandPreproc':
-		dataset = GRAB_DataLoader.GRABArmHand_PreDataset(args)
-	elif args.data=='GRABArmHand':
-		dataset = GRAB_DataLoader.GRABArmHand_Dataset(args)
-	elif args.data=='GRABHandPreproc':
-		dataset = GRAB_DataLoader.GRABHand_PreDataset(args)
-	elif args.data=='GRABHand':
-		dataset = GRAB_DataLoader.GRABHand_Dataset(args)
-	elif args.data=='GRABArmHandObjectPreproc':
-		dataset = GRAB_DataLoader.GRABArmHandObject_PreDataset(args)
-	elif args.data=='GRABArmHandObject':
-		dataset = GRAB_DataLoader.GRABArmHandObject_Dataset(args)
-	elif args.data=='GRABObjectPreproc':
-		dataset = GRAB_DataLoader.GRABObject_PreDataset(args)
-	elif args.data=='GRABObject':
-		dataset = GRAB_DataLoader.GRABObject_Dataset(args)
-	############################
-	elif args.data in ['DAPGPreproc', 'DAPGHandPreproc', 'DAPGObjectPreproc']:
-		dataset = DAPG_DataLoader.DAPG_PreDataset(args)
-	elif args.data=='DAPG':
-		dataset = DAPG_DataLoader.DAPG_Dataset(args)
-	elif args.data=='DAPGHand':
-		dataset = DAPG_DataLoader.DAPGHand_Dataset(args)
-	elif args.data=='DAPGObject':
-		dataset = DAPG_DataLoader.DAPGObject_Dataset(args)
-	############################
-	elif args.data in ['DexMVPreproc', 'DexMVHandPreproc', 'DexMVObjectPreproc']:
-		dataset = DexMV_DataLoader.DexMV_PreDataset(args)
-	elif args.data=='DexMV':
-		dataset = DexMV_DataLoader.DexMV_Dataset(args)
-	elif args.data=='DexMVHand':
-		dataset = DexMV_DataLoader.DexMVHand_Dataset(args)
-	elif args.data=='DexMVObject':
-		dataset = DexMV_DataLoader.DexMV_ObjectDataset(args)
-	############################
-	elif args.data=='MOMARTPreproc':
-		dataset = MOMART_DataLoader.OrigMOMART_Dataset(args)
-	elif args.data=='MOMART':
-		dataset = MOMART_DataLoader.MOMART_Dataset(args)
-	elif args.data=='MOMARTObject':
-		dataset = MOMART_DataLoader.MOMART_ObjectDataset(args)
-	elif args.data=='MOMARTRobotObject':
-		dataset = MOMART_DataLoader.MOMART_RobotObjectDataset(args)
-	
-	############################
-	elif args.data=='FrankaKitchenPreproc':
-		dataset = FrankaKitchen_DataLoader.OrigFrankaKitchen_Dataset(args)
-	elif args.data=='FrankaKitchen':
-		dataset = FrankaKitchen_DataLoader.FrankaKitchen_Dataset(args)
-	elif args.data=='FrankaKitchenObject':
-		dataset = FrankaKitchen_DataLoader.FrankaKitchen_ObjectDataset(args)
-	elif args.data=='FrankaKitchenRobotObject':
-		dataset = FrankaKitchen_DataLoader.FrankaKitchen_RobotObjectDataset(args)
-
-	############################	
-	elif args.data=='RealWorldRigidPreproc':
-		dataset = RealWorldRigid_DataLoader.RealWorldRigid_PreDataset(args)
-	elif args.data in ['RealWorldRigid','RealWorldRigidRobot']:
-		dataset = RealWorldRigid_DataLoader.RealWorldRigid_Dataset(args)
-	elif args.data in ['RealWorldRigidJEEF']:
-		dataset = RealWorldRigid_DataLoader.RealWorldRigid_JointEEFDataset(args)
-	############################
-	elif args.data=='NDAXPreproc':
-		dataset = NDAX_DataLoader.NDAXInterface_PreDataset(args)
-	elif args.data in ['NDAX', 'NDAXMotorAngles']:
-		dataset = NDAX_DataLoader.NDAXInterface_Dataset(args)
-	############################
-	elif args.data=='RealWorldRigidHumanPreproc':
-		dataset = RealWorldRigidHuman_DataLoader.RealWorldRigidHuman_PreDataset(args)
-	elif args.data=='RealWorldRigidHuman':
-		dataset = RealWorldRigidHuman_DataLoader.RealWorldRigidHuman_PreDataset(args)
-
-	return dataset
-
-class Master():
-
-	def __init__(self, arguments):
-		self.args = arguments 
-
-		if self.args.setting not in ['transfer','cycle_transfer','fixembed','jointtransfer','jointcycletransfer','jointfixembed','jointfixcycle','densityjointtransfer','densityjointfixembedtransfer']:
-			print("Creating Datasets")			
-			self.dataset = return_dataset(self.args, create_dataset_variation=self.args.dataset_variation)			
-
-		# print("Embed after dataset creation")
-		# embed()
-
-		# Now define policy manager.
-		if self.args.setting in ['learntsub', 'joint']:
-			# self.policy_manager = PolicyManager_BatchJoint(self.args.number_policies, self.dataset, self.args)
-			if self.args.batch_size > 1: 
-				self.policy_manager = PolicyManager_BatchJoint(self.args.number_policies, self.dataset, self.args)
-			else:
-				self.policy_manager = PolicyManager_Joint(self.args.number_policies, self.dataset, self.args)
-		elif self.args.setting in ['queryjoint']:
-			self.policy_manager = PolicyManager_BatchJointQueryMode(self.args.number_policies, self.dataset, self.args)
-			
-		elif self.args.setting=='context':
-			# Assume we're going to run with batch size > 1. 
-			self.policy_manager = PolicyManager_BatchJoint(self.args.number_policies, self.dataset, self.args)
-
-		elif self.args.setting=='pretrain_sub':
-			if self.args.batch_size > 1: # Only setting batch manager for training.
-				self.policy_manager = PolicyManager_BatchPretrain(self.args.number_policies, self.dataset, self.args)
-			else:
-				self.policy_manager = PolicyManager_Pretrain(self.args.number_policies, self.dataset, self.args)
-
-
-
-
-		###########################################################
-		# policies outputs actions
-		###########################################################
-
-		elif self.args.setting=='baselineRL':
-			self.policy_manager = PolicyManager_BaselineRL(args=self.args)
-
-		elif self.args.setting=='downstreamRL':
-			self.policy_manager = PolicyManager_DownstreamRL(args=self.args)
-
-		elif self.args.setting=='DMP':			
-			self.policy_manager = PolicyManager_DMPBaselines(self.args.number_policies, self.dataset, self.args)
-
-		elif self.args.setting=='imitation':
-			self.policy_manager = PolicyManager_Imitation(self.args.number_policies, self.dataset, self.args)
-
-
-
-
-
-
-		###########################################################
-		# settings below includes 2 different datasets
-		###########################################################
-
-		elif self.args.setting in ['transfer','cycle_transfer','fixembed','jointtransfer','jointcycletransfer','jointfixembed','jointfixcycle','densityjointtransfer','densityjointfixembedtransfer','downstreamtasktransfer']:
-
-			# Creating two copies of arguments, in case we're transferring between MIME left and MIME right.
-			source_args = copy.deepcopy(self.args)
-			target_args = copy.deepcopy(self.args)
-			source_args.single_hand = self.args.source_single_hand
-			target_args.single_hand = self.args.target_single_hand
-			source_args.ee_trajectories = self.args.source_ee_trajs
-			target_args.ee_trajectories = self.args.target_ee_trajs
-			if self.args.source_datadir is not None:
-				source_args.datadir = self.args.source_datadir
-			if self.args.target_datadir is not None:
-				target_args.datadir = self.args.target_datadir	
-	
-			source_dataset = return_dataset(source_args, data=self.args.source_domain)
-			target_dataset = return_dataset(target_args, data=self.args.target_domain)
-				
-			# # If we're creating a variation in the dataset: 
-			# if self.args.dataset_variation:
-			# 	target_dataset = return_dataset(self.args, data=self.args.target_domain, create_dataset_variation=create_dataset_variation)
-
-			if self.args.setting=='transfer':
-				self.policy_manager = PolicyManager_Transfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='cycle_transfer':
-				self.policy_manager = PolicyManager_CycleConsistencyTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)				
-			elif self.args.setting=='fixembed':
-				self.policy_manager = PolicyManager_FixEmbedCycleConTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='jointfixembed':
-				self.policy_manager = PolicyManager_JointFixEmbedTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='jointfixcycle':
-				self.policy_manager = PolicyManager_JointFixEmbedCycleTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='jointtransfer':
-				self.policy_manager = PolicyManager_JointTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='jointcycletransfer':
-				self.policy_manager = PolicyManager_JointCycleTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='densityjointtransfer':
-				self.policy_manager = PolicyManager_DensityJointTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='densityjointfixembedtransfer':
-				self.policy_manager = PolicyManager_DensityJointFixEmbedTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-			elif self.args.setting=='downstreamtasktransfer':
-				self.policy_manager = PolicyManager_DownstreamTaskTransfer(args=self.args, source_dataset=source_dataset, target_dataset=target_dataset)
-
-		elif self.args.setting in ['iktrainer']:
-			self.policy_manager = PolicyManager_IKTrainer(self.dataset, self.args)
-
-		if self.args.debug:
-			print("Embedding in Master.")
-			embed()
-			
-		# Create networks and training operations. 
-		self.policy_manager.setup()
-
-	def run(self):
-		if self.args.setting in ['pretrain_sub','pretrain_prior','imitation','baselineRL','downstreamRL',\
-			'transfer','cycle_transfer','jointtransfer','fixembed','jointcycletransfer', 'jointfixembed',\
-			'jointfixcycle','densityjointtransfer','densityjointfixembedtransfer','iktrainer', 'downstreamtasktransfer']:
-			if self.args.train:
-				if self.args.model:
-					self.policy_manager.train(self.args.model)
-				else:
-					self.policy_manager.train()
-			else:			
-				if self.args.setting=='pretrain_prior':
-					self.policy_manager.train(self.args.model)
-				else:
-					self.policy_manager.evaluate(model=self.args.model)		
-				
-		# elif self.args.setting=='learntsub' or self.args.setting=='joint' or self.args.setting=='context':
-		elif self.args.setting in ['learntsub','joint','context','queryjoint']:
-			if self.args.train:
-				if self.args.model:
-					self.policy_manager.train(self.args.model)
-				else:
-					if self.args.subpolicy_model:
-						print("Just loading subpolicies.")
-						self.policy_manager.load_all_models(self.args.subpolicy_model, just_subpolicy=True)
-					self.policy_manager.train()
-			else:
-				# self.policy_manager.train(self.args.model)
-				self.policy_manager.evaluate(self.args.model)
-
-		# elif self.args.setting=='baselineRL' or self.args.setting=='downstreamRL':
-		# 	if self.args.train:
-		# 		if self.args.model:
-		
-		# 			self.policy_manager.train(self.args.model)
-		# 		else:
-		# 			self.policy_manager.train()
-
-		elif self.args.setting=='DMP':
-			self.policy_manager.evaluate_across_testset()
-
-	def test(self):
-		if self.args.test_code:
-			loader = TestClass.TestLoaderWithKwargs()
-			suite = loader.loadTestsFromTestCase(TestClass.MetaTestClass, policy_manager=self.policy_manager)
-			unittest.TextTestRunner().run(suite)
+		dataset = MAGI_DataLoader.MAGI_PreDataset( args )
+	if data in ["MAGI"]:
+		args.data = data
+		dataset = MAGI_DataLoader.MAGI_Dataset( args )
+	return dataset		
 
 def parse_arguments():
 	parser = argparse.ArgumentParser(description='Learning Skills from Demonstrations')
@@ -593,19 +320,8 @@ def parse_arguments():
 	return parser.parse_args()
 
 def main(args):
-
-	args = parse_arguments()
-	# Moving this up.
-	# wandb.init(project=args.setting, dir=args.logdir, name=args.name)
-
-	master = Master(args)	
-	# Add argparse flags to wandb config.
-	# wandb.config.update(args)
-
-	# if args.test_code:
-	# 	master.test()
-	# else:
-	# 	master.run()
+	args = parse_arguments()	
+	dataset = return_dataset(args, create_dataset_variation=args.dataset_variation)
 
 if __name__=='__main__':
 	main(sys.argv)

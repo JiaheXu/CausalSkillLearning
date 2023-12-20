@@ -1,0 +1,21 @@
+Creating Datasets
+Env names:
+ ['/MocapShadowHandDoorCloseInward' '/MocapShadowHandDoorCloseOutward'
+ '/MocapShadowHandDoorOpenInward' '/MocapShadowHandDoorOpenOutward']
+Setting random seeds.
+RUNNING SETUP OF:  <PolicyManagers.PolicyManager_BatchPretrain object at 0x7f08186ffcc0>
+Running Main Train Function.
+Starting Epoch:  0
+Traceback (most recent call last):
+  File "Master.py", line 528, in <module>
+    main(sys.argv)
+  File "Master.py", line 525, in main
+    master.run()
+  File "Master.py", line 186, in run
+    self.policy_manager.train()
+  File "/ws/CausalSkillLearning/Experiments/PolicyManagers.py", line 370, in train
+    self.run_iteration(counter, i)
+  File "/ws/CausalSkillLearning/Experiments/PolicyManagers.py", line 3227, in run_iteration
+    input_dict['state_action_trajectory'], input_dict['sample_action_seq'], input_dict['sample_traj'], input_dict['data_element'] = self.get_trajectory_segment(i)
+TypeError: 'NoneType' object is not iterable
+

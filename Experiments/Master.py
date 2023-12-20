@@ -8,6 +8,9 @@
 
 from headers import *
 import DataLoaders,  DAPG_DataLoader, DexMV_DataLoader, RealWorldRigid_DataLoader
+
+import MAGI_DataLoader
+
 from PolicyManagers import *
 import TestClass
 import faulthandler
@@ -52,6 +55,11 @@ def return_dataset(args, data=None, create_dataset_variation=False):
 		dataset = RealWorldRigidHuman_DataLoader.RealWorldRigidHuman_PreDataset(args)
 	elif args.data=='RealWorldRigidHuman':
 		dataset = RealWorldRigidHuman_DataLoader.RealWorldRigidHuman_PreDataset(args)
+	############################	
+	elif args.data in ["MAGIPreproc"]:
+		dataset = MAGI_DataLoader.MAGI_PreDataset( args )
+	elif args.data in ["MAGI"]:
+		dataset = MAGI_DataLoader.MAGI_Dataset( args )
 
 	return dataset
 
