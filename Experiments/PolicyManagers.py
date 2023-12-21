@@ -2061,12 +2061,6 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			# The latent space is just one of 4 z's. So make output of encoder a one hot vector.		
 			self.encoder_network = EncoderNetwork(self.input_size, self.hidden_size, self.number_policies).to(device)
 		else:
-			# self.encoder_network = ContinuousEncoderNetwork(self.input_size, self.hidden_size, self.latent_z_dimensionality).to(device)
-
-			# if self.args.transformer:
-			# 	self.encoder_network = TransformerEncoder(self.input_size, self.hidden_size, self.latent_z_dimensionality, self.args).to(device)
-			# else:
-
 			if self.args.split_stream_encoder:
 				self.encoder_network = ContinuousFactoredEncoderNetwork(self.input_size, self.args.var_hidden_size, int(self.latent_z_dimensionality/2), self.args).to(device)
 			else:

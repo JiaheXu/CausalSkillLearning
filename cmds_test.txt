@@ -145,7 +145,8 @@ CUDA_VISIBLE_DEVICES=0 python3 Master.py \
  --logdir=/ws/CausalSkillLearning/TrainingLogs/
  
  
- ########################################################## MAGI
+########################################################## MAGI
+Preprocess
 CUDA_VISIBLE_DEVICES=0 python3 dataset_test.py \
  --train=1 \
  --setting=pretrain_sub \
@@ -194,7 +195,7 @@ CUDA_VISIBLE_DEVICES=0 python3 Master.py \
  --seed=0 \
  --epsilon_from=1.0 \
  --epsilon_to=0.1 \
- --epsilon_over=50000 \
+ --epsilon_over=100000 \
  --display_freq=2000 \
  --epochs=100000 \
  --save_freq=2000 \
@@ -203,6 +204,8 @@ CUDA_VISIBLE_DEVICES=0 python3 Master.py \
  --z_dimensions=16 \
  --normalization=minmax \
  --split_stream_encoder=1 \
+ --robot_state_size=213 \
+ --env_state_size=19 \ 
  --variance_mode='QuadraticAnnealed' \
  --initial_policy_variance=1. \
  --final_policy_variance=0.0001 \
