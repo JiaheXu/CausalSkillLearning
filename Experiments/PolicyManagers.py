@@ -492,6 +492,9 @@ class PolicyManager_BaseClass():
 
 	def visualize_robot_data(self, load_sets=False, number_of_trajectories_to_visualize=None):
 
+		print("in PM_Base visualize_robot_data func !!!")
+		print("in PM_Base visualize_robot_data func !!!")
+		print("in PM_Base visualize_robot_data func !!!")
 		
 		if number_of_trajectories_to_visualize is not None:
 			self.N = number_of_trajectories_to_visualize
@@ -583,26 +586,8 @@ class PolicyManager_BaseClass():
 				number_batches_for_dataset = (len(self.dataset)//self.args.batch_size)+1
 				i = j % number_batches_for_dataset
 
-				# (1) Encode trajectory. 
-				if self.args.setting in ['learntsub','joint', 'queryjoint']:
-					
-					
-					input_dict, var_dict, eval_dict = self.run_iteration(0, j, return_dicts=True, train=False)
-					latent_z = var_dict['latent_z_indices']
-					sample_trajs = input_dict['sample_traj']
-					data_element = input_dict['data_element']
-					latent_b = torch.swapaxes(var_dict['latent_b'], 1,0)
-
-					# Generate segment index list..
-					self.generate_segment_indices(latent_b)
-
-					# print("Embed to verify segment indices")
-					# embed()
-
-				else:
-					print("Running iteration of segment in viz, i: ", i, "j:", j) ####!!! here
-					latent_z, sample_trajs, _, data_element = self.run_iteration(0, i, return_z=True, and_train=False)
-					# latent_z, sample_trajs, _, data_element = self.run_iteration(0, j*self.args.batch_size, return_z=True, and_train=False)
+				print("Running iteration of segment in viz, i: ", i, "j:", j) ####!!! here
+				latent_z, sample_trajs, _, data_element = self.run_iteration(0, i, return_z=True, and_train=False)
 
 				if self.args.batch_size>1:
 
@@ -618,35 +603,16 @@ class PolicyManager_BaseClass():
 					for b in range(self.args.batch_size):
 						
 						self.indices.append(j*self.args.batch_size+b)
-						print("#########################################")	
+						print("######################################### 1")	
 						print("Getting visuals for trajectory: ",j*self.args.batch_size+b)
-						# print("Getting visuals for trajectory:")
-						# print("j:", j, "b:", b, "j*bs+b:", j*self.args.batch_size+b, "il[j*bs+b]:", self.index_list[j*self.args.batch_size+b] "env:", self.dataset[self.index_list[j*self.args.batch_size+b]]['file'])
-						# print("j:", j, "b:", b, "j*bs+b:", j*self.args.batch_size+b, "il[j*bs+b]:", self.index_list[j*self.args.batch_size+b])
 
-						if self.args.setting in ['learntsub','joint','queryjoint']:
-							self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b].detach().cpu().numpy())
-
-							# Rollout each individual trajectory in this batch.
-							# trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[:,b], sample_trajs[:self.batch_trajectory_lengths[b],b], z_seq=True, indexed_data_element=input_dict['data_element'][b])
-							trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[:self.batch_trajectory_lengths[b],b], \
-												sample_trajs[:self.batch_trajectory_lengths[b],b], z_seq=True, indexed_data_element=input_dict['data_element'][b], \
-												segment_indices=self.batch_segment_index_list[b])
+						# self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b].detach().cpu().numpy())
+						self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b,stream_z_indices].detach().cpu().numpy())
+						
+						# Rollout each individual trajectory in this batch.
+						trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[0,b], sample_trajs[:,b], indexed_data_element=data_element[b])
+						gt_traj = sample_trajs[:,b]
 							
-							self.queryjoint_latent_z_set.append(copy.deepcopy(latent_z[:self.batch_trajectory_lengths[b],b].detach().cpu().numpy()))
-
-							# self.queryjoint_latent_b_set.append(copy.deepcopy(latent_b[:self.batch_trajectory_lengths[b],b].detach().cpu().numpy()))
-							
-							gt_traj = sample_trajs[:self.batch_trajectory_lengths[b],b]
-						else:
-							# self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b].detach().cpu().numpy())
-							self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b,stream_z_indices].detach().cpu().numpy())
-			
-							# Rollout each individual trajectory in this batch.
-							trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[0,b], sample_trajs[:,b], indexed_data_element=data_element[b])
-							gt_traj = sample_trajs[:,b]
-							
-
 						# Now append this particular sample traj and the rollout into trajectroy and rollout sets.
 						self.trajectory_set.append(copy.deepcopy(gt_traj))
 						self.trajectory_rollout_set.append(copy.deepcopy(trajectory_rollout))
@@ -684,7 +650,7 @@ class PolicyManager_BaseClass():
 
 				else:
 
-					print("#########################################")	
+					print("######################################### 2")	
 					print("Getting visuals for trajectory: ",j,i)
 
 					if latent_z is not None:
@@ -1067,6 +1033,8 @@ class PolicyManager_BaseClass():
 
 	def get_robot_visuals(self, i, latent_z, trajectory, return_image=False, return_numpy=False, z_seq=False, indexed_data_element=None, segment_indices=None):
 
+		print("We are in the PM_Base get_robot_visuals func !!!")
+
 		########################################
 		# 1) Get task ID. 
 		########################################
@@ -1112,7 +1080,7 @@ class PolicyManager_BaseClass():
 			# Get animation object from dataset. 
 			animation_object = self.dataset[i]['animation']
 
-		print("We are in the PM visualizer function.")
+		
 
 		# Set task ID if the visualizer needs it. 
 		# if indexed_data_element is not None and self.args.data == 'DAPG':
@@ -2401,28 +2369,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 	def get_trajectory_segment(self, i):
 
-		# if self.args.data=='Continuous' or self.args.data=='ContinuousDir' or self.args.data=='ContinuousNonZero' or self.args.data=='DirContNonZero' or self.args.data=='ContinuousDirNZ' or self.args.data=='GoalDirected' or self.args.data=='Separable':
-		if self.args.data in ['ContinuousNonZero','DirContNonZero','ToyContext','DeterGoal']:
-			# Sample trajectory segment from dataset. 
-			sample_traj, sample_action_seq = self.dataset[i]
-
-			# Subsample trajectory segment. 		
-			start_timepoint = np.random.randint(0,self.args.traj_length-self.traj_length)
-			end_timepoint = start_timepoint + self.traj_length
-			# The trajectory is going to be one step longer than the action sequence, because action sequences are constructed from state differences. Instead, truncate trajectory to length of action sequence. 
-			sample_traj = sample_traj[start_timepoint:end_timepoint]	
-			sample_action_seq = sample_action_seq[start_timepoint:end_timepoint-1]
-
-			self.current_traj_len = self.traj_length
-
-			# Now manage concatenated trajectory differently - {{s0,_},{s1,a0},{s2,a1},...,{sn,an-1}}.
-			concatenated_traj = self.concat_state_action(sample_traj, sample_action_seq)
-
-			return concatenated_traj, sample_action_seq, sample_traj
-		
-		# elif self.args.data in ['MIME','OldMIME','Roboturk','OrigRoboturk','FullRoboturk','Mocap','OrigRoboMimic','RoboMimic']:
-	
-		elif self.args.data in global_dataset_list:
+		if self.args.data in global_dataset_list:
 		
 			data_element = self.dataset[i]
 
@@ -2864,6 +2811,9 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 	def run_iteration(self, counter, i, return_z=False, and_train=True):
 
+		print("in PM Pretrain run_iteration func !!!")
+		print("in PM Pretrain run_iteration func !!!")
+		print("in PM Pretrain run_iteration func !!!")
 		####################################
 		####################################
 		# Basic Training Algorithm: 
@@ -2886,7 +2836,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		input_dict = {}
 
 		input_dict['state_action_trajectory'], input_dict['sample_action_seq'], input_dict['sample_traj'], input_dict['data_element'] = self.get_trajectory_segment(i)
-
+		print("input_dict['state_action_trajectory']: ", input_dict['state_action_trajectory'].shape)
 		# state_action_trajectory, sample_action_seq, sample_traj, data_element  = self.get_trajectory_segment(i)
 		# self.sample_traj_var = sample_traj
 		self.sample_traj_var = input_dict['sample_traj']
@@ -3412,11 +3362,14 @@ class PolicyManager_BatchPretrain(PolicyManager_Pretrain):
 		return data_element
 
 	def get_trajectory_segment(self, i):
-	
+		
+		print("in PM_BatchPretrain get_trajectory_segment func !!!")
+		print("in PM_BatchPretrain get_trajectory_segment func !!!")
+		print("in PM_BatchPretrain get_trajectory_segment func !!!")
+
 		if self.args.data in global_dataset_list:
 
-			if self.args.data in ['MIME','OldMIME'] or self.args.data=='Mocap':
-				# data_element = self.dataset[i:i+self.args.batch_size]
+			if self.args.data=='Mocap':
 				data_element = self.dataset[self.index_list[i:i+self.args.batch_size]]				
 			else:
 				data_element = self.get_batch_element(i)
@@ -3437,7 +3390,6 @@ class PolicyManager_BatchPretrain(PolicyManager_Pretrain):
 			# Changing this selection, assuming that the index_list is corrected to only have within dataset length indices.
 			for x in range(self.args.batch_size):
 			
-
 				# Select the trajectory for each instance in the batch. 
 				if self.args.ee_trajectories:
 					traj = data_element[x]['endeffector_trajectory']
@@ -3791,8 +3743,6 @@ class PolicyManager_BatchPretrain(PolicyManager_Pretrain):
 				#############################
 
 				trajectory_rollout, _, _, _ = self.differentiable_rollout(sample_trajs[0], latent_z)
-
-				# Need to add some stuff here to mimic get_robot_visuals' list management.
 
 				if self.args.normalization=='meanvar' or self.args.normalization=='minmax':
 					unnorm_gt_trajectory = (sample_trajs*self.norm_denom_value)+self.norm_sub_value
