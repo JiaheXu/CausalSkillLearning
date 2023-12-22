@@ -204,14 +204,6 @@ class Master():
 				# self.policy_manager.train(self.args.model)
 				self.policy_manager.evaluate(self.args.model)
 
-		# elif self.args.setting=='baselineRL' or self.args.setting=='downstreamRL':
-		# 	if self.args.train:
-		# 		if self.args.model:
-		
-		# 			self.policy_manager.train(self.args.model)
-		# 		else:
-		# 			self.policy_manager.train()
-
 		elif self.args.setting=='DMP':
 			self.policy_manager.evaluate_across_testset()
 

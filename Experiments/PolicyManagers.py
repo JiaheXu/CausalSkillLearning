@@ -600,7 +600,7 @@ class PolicyManager_BaseClass():
 					# embed()
 
 				else:
-					print("Running iteration of segment in viz, i: ", i, "j:", j)
+					print("Running iteration of segment in viz, i: ", i, "j:", j) ####!!! here
 					latent_z, sample_trajs, _, data_element = self.run_iteration(0, i, return_z=True, and_train=False)
 					# latent_z, sample_trajs, _, data_element = self.run_iteration(0, j*self.args.batch_size, return_z=True, and_train=False)
 
@@ -2263,9 +2263,6 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			log_dict["Embedded Z Space Perplexity 10"] =  self.return_wandb_image(image_perp10)
 			log_dict["Embedded Z Space Perplexity 30"] =  self.return_wandb_image(image_perp30)
 
-		# if counter%self.args.metric_eval_freq==0:
-		# 	self.visualize_robot_data(load_sets=False, number_of_trajectories_to_visualize=10)
-
 		wandb.log(log_dict, step=counter)
 
 	def plot_embedding(self, embedded_zs, title, shared=False, trajectory=False):
@@ -3003,19 +3000,14 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 		np.set_printoptions(suppress=True,precision=2)
 
-		if self.args.data in ['ContinuousNonZero','DirContNonZero','ToyContext']:
-			self.visualize_embedding_space(suffix=suffix)
-
 		if self.args.data in global_dataset_list:
 
-			print("Running Evaluation of State Distances on small test set.")
-			# self.evaluate_metrics()		
+			print("Running Evaluation of State Distances on small test set.")	
 
 			# Only running viz if we're actually pretraining.
-			if self.args.traj_segments:
+			if self.args.traj_segments: ##!!! here
 				print("Running Visualization on Robot Data.")	
 
-				# self.visualize_robot_data(load_sets=True)
 				whether_load_z_set = self.args.latent_set_file_path is not None
 
 				# print("###############################################")
