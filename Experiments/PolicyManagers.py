@@ -284,7 +284,9 @@ class PolicyManager_BaseClass():
 	
 	def train(self, model=None):
 
-		print("Running Main Train Function.")
+		print("Running Main Train Function. !!!")
+		print("Running Main Train Function. !!!")
+		print("Running Main Train Function. !!!")
 
 		########################################
 		# (1) Load Model If Necessary
@@ -356,23 +358,9 @@ class PolicyManager_BaseClass():
 				##############################################
 				# (5) Run Iteration
 				##############################################
-
-				# print("Epoch:",e,"Trajectory:",str(i).zfill(5), "Datapoints:",str(self.index_list[i]).zfill(5),"Extent:",extent)
-				profile_iteration = 0 				
-				if profile_iteration:
-					self.lp = LineProfiler()
-					self.lp_wrapper = self.lp(self.run_iteration)
-					# self.lp_wrapper(counter, self.index_list[i])
-					self.lp_wrapper(counter, i)
-					self.lp.print_stats()			
-				else:													
-					# self.run_iteration(counter, self.index_list[i])
-					self.run_iteration(counter, i)
-
+				self.run_iteration(counter, i)
 				t3 = time.time()
-				# print("Epoch:",e,"Trajectory:",str(i).zfill(5), "Datapoints:",str(self.index_list[i]).zfill(5), "Iter Time:",format(t3-t2,".4f"),"PerET:",format(cum_epoch_time/max(e,1),".4f"),"CumET:",format(cum_epoch_time,".4f"),"Extent:",extent)
 				print("Epoch:",e,"Trajectory:",str(i).zfill(5), "Datapoints:",str(i).zfill(5), "Iter Time:",format(t3-t2,".4f"),"PerET:",format(cum_epoch_time/max(e,1),".4f"),"CumET:",format(cum_epoch_time,".4f"),"Extent:",extent)
-
 				counter = counter+1
 				
 			##############################################
@@ -393,11 +381,7 @@ class PolicyManager_BaseClass():
 			##############################################
 			# (8) Debug
 			##############################################
-						
 			self.epoch_coverage += self.coverage
-			# if e%100==0:
-			# 	print("Debugging dataset coverage")
-			# 	embed()
 
 	def automatic_evaluation(self, e):
 
@@ -514,7 +498,7 @@ class PolicyManager_BaseClass():
 		#####################################################
 		# Get latent z sets.
 		#####################################################
-		
+		print("load_sets: ", load_sets)
 		if not(load_sets):
 
 			#####################################################
@@ -567,7 +551,6 @@ class PolicyManager_BaseClass():
 			if not(os.path.isdir(self.z_dir_name)):
 				os.mkdir(self.z_dir_name)
 
-
 			self.max_len = 0
 
 			#####################################################
@@ -606,11 +589,10 @@ class PolicyManager_BaseClass():
 						print("######################################### 1")	
 						print("Getting visuals for trajectory: ",j*self.args.batch_size+b)
 
-						# self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b].detach().cpu().numpy())
 						self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b,stream_z_indices].detach().cpu().numpy())
 						
 						# Rollout each individual trajectory in this batch.
-						trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[0,b], sample_trajs[:,b], indexed_data_element=data_element[b])
+						trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[0,b], sample_trajs[:,b], indexed_data_element=data_element[b]) #!!! here
 						gt_traj = sample_trajs[:,b]
 							
 						# Now append this particular sample traj and the rollout into trajectroy and rollout sets.
@@ -638,11 +620,6 @@ class PolicyManager_BaseClass():
 							rollout_traj = self.trajectory_rollout_set[k]
 							rollout_traj_tuple = (data_element[b]['environment-name'], rollout_traj)
 							# rollout_traj = (self.trajectory_rollout_set[k]*self.norm_denom_value) + self.norm_sub_value
-
-						# (trajectory_start * self.norm_denom_value ) + self.norm_sub_value
-						# np.save(os.path.join(self.traj_dir_name, "GT_Traj{0}.npy".format(k)), gt_traj)
-						# np.save(os.path.join(self.traj_dir_name, "Rollout_Traj{0}.npy".format(k)), rollout_traj)
-						# np.save(os.path.join(self.z_dir_name, "Latent_Z{0}.npy".format(k)), self.latent_z_set[k])
 												
 						np.save(os.path.join(self.traj_dir_name, "Traj{0}_GT.npy".format(kstr)), gt_traj_tuple)
 						np.save(os.path.join(self.traj_dir_name, "Traj{0}_Rollout.npy".format(kstr)), rollout_traj_tuple)
@@ -1031,7 +1008,7 @@ class PolicyManager_BaseClass():
 
 		return rollout_fulltrajectory, None
 
-	def get_robot_visuals(self, i, latent_z, trajectory, return_image=False, return_numpy=False, z_seq=False, indexed_data_element=None, segment_indices=None):
+	def get_robot_visuals(self, i, latent_z, trajectory, return_image=False, return_numpy=False, z_seq=False, indexed_data_element=None, segment_indices=None): #!!! here
 
 		print("We are in the PM_Base get_robot_visuals func !!!")
 
@@ -1259,13 +1236,13 @@ class PolicyManager_BaseClass():
 		print("Time taken to write this embedding in HTML: ",t2-t1)
 		# print("Time taken to save the animation object: ",t3-t2)
 
-	def get_robot_embedding(self, return_tsne_object=False, perplexity=None):
+	def get_robot_embedding(self, return_tsne_object=False, perplexity=None): #!!! here
 
 		# # Mean and variance normalize z.
 		# mean = self.latent_z_set.mean(axis=0)
 		# std = self.latent_z_set.std(axis=0)
 		# normed_z = (self.latent_z_set-mean)/std
-		normed_z = self.latent_z_set
+		normed_z = self.latent_z_set #!!! here
 
 		if perplexity is None:
 			perplexity = self.args.perplexity
@@ -2169,7 +2146,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 		return image
 
-	def update_plots(self, counter, loglikelihood, sample_traj, stat_dictionary):
+	def update_plots(self, counter, loglikelihood, sample_traj, stat_dictionary):#!!! here
 		
 		# log_dict['Subpolicy Loglikelihood'] = loglikelihood.mean()
 		log_dict = {'Subpolicy Loglikelihood': loglikelihood.mean(), 'Total Loss': self.total_loss.mean(), 'Encoder KL': self.encoder_KL.mean(), 'KL Weight': self.kl_weight}
@@ -2212,7 +2189,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			# Get embeddings for perplexity=5,10,30, and then plot these.
 			# Once we have latent set, get embedding and plot it. 
 			self.embedded_z_dict = {}
-			self.embedded_z_dict['perp5'] = self.get_robot_embedding(perplexity=5)
+			self.embedded_z_dict['perp5'] = self.get_robot_embedding(perplexity=5) #!!! here
 			self.embedded_z_dict['perp10'] = self.get_robot_embedding(perplexity=10)
 			self.embedded_z_dict['perp30'] = self.get_robot_embedding(perplexity=30)
 
@@ -2221,7 +2198,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 			# Now plot the embedding.
 			statistics_line = "Epoch: {0}, Count: {1}, I: {2}, Batch: {3}".format(stat_dictionary['epoch'], stat_dictionary['counter'], stat_dictionary['i'], stat_dictionary['batch_size'])
-			image_perp5 = self.plot_embedding(self.embedded_z_dict['perp5'], title="Z Space {0} Perp 5".format(statistics_line))
+			image_perp5 = self.plot_embedding(self.embedded_z_dict['perp5'], title="Z Space {0} Perp 5".format(statistics_line)) #!!! here
 			image_perp10 = self.plot_embedding(self.embedded_z_dict['perp10'], title="Z Space {0} Perp 10".format(statistics_line))
 			image_perp30 = self.plot_embedding(self.embedded_z_dict['perp30'], title="Z Space {0} Perp 30".format(statistics_line))
 			
@@ -2233,7 +2210,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 		wandb.log(log_dict, step=counter)
 
-	def plot_embedding(self, embedded_zs, title, shared=False, trajectory=False):
+	def plot_embedding(self, embedded_zs, title, shared=False, trajectory=False): #!!! here
 	
 		fig = plt.figure()
 		ax = fig.gca()
@@ -2243,7 +2220,8 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			colors[self.N:] = 0.8
 		else:
 			colors = 0.2*np.ones((self.N))
-
+		
+		#not for pretrain_sub
 		if trajectory:
 			# Create a scatter plot of the embedding.
 
@@ -2809,11 +2787,11 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		if return_traj:
 			return trajectory_rollout		
 
-	def run_iteration(self, counter, i, return_z=False, and_train=True):
+	def run_iteration(self, counter, i, return_z=False, and_train=True): # return_z=True, and_train=False) for evaluate
 
-		print("in PM Pretrain run_iteration func !!!")
-		print("in PM Pretrain run_iteration func !!!")
-		print("in PM Pretrain run_iteration func !!!")
+		print("in PM_Pretrain run_iteration func !!!")
+		print("in PM_Pretrain run_iteration func !!!")
+		print("in PM_Pretrain run_iteration func !!!")
 		####################################
 		####################################
 		# Basic Training Algorithm: 
@@ -2836,15 +2814,16 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		input_dict = {}
 
 		input_dict['state_action_trajectory'], input_dict['sample_action_seq'], input_dict['sample_traj'], input_dict['data_element'] = self.get_trajectory_segment(i)
-		print("input_dict['state_action_trajectory']: ", input_dict['state_action_trajectory'].shape)
-		# state_action_trajectory, sample_action_seq, sample_traj, data_element  = self.get_trajectory_segment(i)
-		# self.sample_traj_var = sample_traj
+
 		self.sample_traj_var = input_dict['sample_traj']
 		self.input_dict = input_dict
 		####################################
 		############# (0a) #############
 		####################################
 
+		####################################
+		# for evaluation as well? Todo
+		####################################
 		# Corrupt the inputs according to how much input_corruption_noise is set to.
 		state_action_trajectory = self.corrupt_inputs(input_dict['state_action_trajectory'])
 
@@ -2857,15 +2836,12 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			torch_traj_seg = torch.tensor(state_action_trajectory).to(device).float()
 			# Encode trajectory segment into latent z. 		
 						
-			latent_z, encoder_loglikelihood, encoder_entropy, kl_divergence = self.encoder_network.forward(torch_traj_seg, self.epsilon)
-			# latent_z, encoder_loglikelihood, encoder_entropy, kl_divergence = self.encoder_network.forward(torch_traj_seg)
-			
+			latent_z, encoder_loglikelihood, encoder_entropy, kl_divergence = self.encoder_network.forward(torch_traj_seg, self.epsilon) #!!!!!!!! here
+			# here is how we get latent_z, need to check dim
+
 			####################################
 			########## (2) & (3) ##########
 			####################################
-
-			# print("Embed in rut iter")
-			# embed()
 
 			# Feed latent z and trajectory segment into policy network and evaluate likelihood. 
 			latent_z_seq, latent_b = self.construct_dummy_latents(latent_z)
@@ -3247,7 +3223,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 		return z_neighbor_distances, z_neighbor_indices
 
-	def retrieve_cross_indexed_nearest_neighbor_from_trajectory(self, trajectory, stream, number_neighbors=1):
+	def retrieve_cross_indexed_nearest_neighbor_from_trajectory(self, trajectory, stream, number_neighbors=1): #!!! here
 
 		# Get neighbors. 
 		z_neighbor_distances , z_neighbor_indices = self.retrieve_nearest_neighbors_from_trajectory(trajectory, stream, number_neighbors)
@@ -3313,7 +3289,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 		pass
 
-	def create_evaluate_dynamics_models(self):
+	def create_evaluate_dynamics_models(self): ###!!!! here
 
 		# After we've created latent sets.
 		self.define_forward_inverse_models()
