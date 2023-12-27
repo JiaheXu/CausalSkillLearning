@@ -251,7 +251,9 @@ class MAGI_Dataset(Dataset):
 
 		self.dataset_length = len(self.data_list)
 		
-
+		print("dataset_length", self.dataset_length)
+		print("dataset_length", self.dataset_length)
+		print("dataset_length", self.dataset_length)
 		if self.args.dataset_traj_length_limit>0:			
 			self.short_data_list = []
 			# self.short_data_list2 = []

@@ -18,7 +18,7 @@ import faulthandler
 f = open("SegFDebug2.txt","w+")
 faulthandler.enable(f)
 
-def return_dataset(args, data="MAGI", create_dataset_variation=False):
+def return_dataset(args, data="MAGIPreproc", create_dataset_variation=False):
 	
 	# The data parameter overrides the data in args.data. 
 	# This is so that we can call return_dataset with source and target data for transfer setting.

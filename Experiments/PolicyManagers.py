@@ -476,6 +476,7 @@ class PolicyManager_BaseClass():
 
 	def visualize_robot_data(self, load_sets=False, number_of_trajectories_to_visualize=None):
 
+		
 		print("in PM_Base visualize_robot_data func !!!")
 		print("in PM_Base visualize_robot_data func !!!")
 		print("in PM_Base visualize_robot_data func !!!")
@@ -483,12 +484,11 @@ class PolicyManager_BaseClass():
 		if number_of_trajectories_to_visualize is not None:
 			self.N = number_of_trajectories_to_visualize
 		else:
-
 			####################################
 			# TEMPORARILY SET N to 10
 			####################################
 			# self.N = 33
-			self.N = self.args.N_trajectories_to_visualize
+			self.N = min( self.args.N_trajectories_to_visualize, self.dataset.dataset_length)
 
 		self.rollout_timesteps = self.args.traj_length
 	
@@ -563,10 +563,13 @@ class PolicyManager_BaseClass():
 
 			# print("Embedding before the robot visuals loop.s")
 			# embed()
+			print("self.N: ", self.N)
+			print("self.N: ", self.N)
+			print("self.N: ", self.N)
 
-			for j in range(self.N//self.args.batch_size):
+			for j in range( (self.N + self.args.batch_size - 1) //self.args.batch_size ):
 				
-				number_batches_for_dataset = (len(self.dataset)//self.args.batch_size)+1
+				number_batches_for_dataset = (self.N + self.args.batch_size - 1) //self.args.batch_size 
 				i = j % number_batches_for_dataset
 
 				print("Running iteration of segment in viz, i: ", i, "j:", j) ####!!! here
@@ -580,7 +583,7 @@ class PolicyManager_BaseClass():
 
 					#######################
 					# Create env for batch.
-					if not(self.args.data in ['RealWorldRigid', 'NDAX', 'NDAXMotorAngles']):
+					if not(self.args.data in ['RealWorldRigid', 'NDAX', 'NDAXMotorAngles', 'MAGI']):
 						self.per_batch_env_management(data_element[0])
 
 					for b in range(self.args.batch_size):
@@ -593,12 +596,15 @@ class PolicyManager_BaseClass():
 						
 						# Rollout each individual trajectory in this batch.
 						trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[0,b], sample_trajs[:,b], indexed_data_element=data_element[b]) #!!! here
+
 						gt_traj = sample_trajs[:,b]
 							
 						# Now append this particular sample traj and the rollout into trajectroy and rollout sets.
 						self.trajectory_set.append(copy.deepcopy(gt_traj))
 						self.trajectory_rollout_set.append(copy.deepcopy(trajectory_rollout))
-						self.task_name_set.append(data_element[b]['environment-name'])
+						# self.task_name_set.append(data_element[b]['environment-name'])
+
+
 						#######################
 						# Save the GT trajectory, the rollout, and Z into numpy files. 
 
@@ -614,11 +620,14 @@ class PolicyManager_BaseClass():
 						if self.args.normalization is not None:
 							
 							gt_traj = (self.trajectory_set[k] *self.norm_denom_value) + self.norm_sub_value
-							gt_traj_tuple = (data_element[b]['environment-name'], gt_traj)
-							
+							# gt_traj_tuple = (data_element[b]['environment-name'], gt_traj)
+							gt_traj_tuple = (i, gt_traj)
+
 							# Don't unnormalize, we already did in get robot visuals. 
 							rollout_traj = self.trajectory_rollout_set[k]
-							rollout_traj_tuple = (data_element[b]['environment-name'], rollout_traj)
+							# rollout_traj_tuple = (data_element[b]['environment-name'], rollout_traj)
+							rollout_traj_tuple = (i, rollout_traj)
+							
 							# rollout_traj = (self.trajectory_rollout_set[k]*self.norm_denom_value) + self.norm_sub_value
 												
 						np.save(os.path.join(self.traj_dir_name, "Traj{0}_GT.npy".format(kstr)), gt_traj_tuple)
@@ -685,8 +694,8 @@ class PolicyManager_BaseClass():
 		# print("#################################################")
 		# embed()
 
-		gt_animation_object = self.visualize_robot_embedding(embedded_z, gt=True)
-		rollout_animation_object = self.visualize_robot_embedding(embedded_z, gt=False)
+		# gt_animation_object = self.visualize_robot_embedding(embedded_z, gt=True)
+		# rollout_animation_object = self.visualize_robot_embedding(embedded_z, gt=False)
 		
 		self.task_name_set_array = np.array(self.task_name_set)
 
@@ -697,7 +706,7 @@ class PolicyManager_BaseClass():
 		self.write_results_HTML(plots_or_gif='Plot')
 		
 		viz_embeddings = True
-		if (self.args.data in ['RealWorldRigid', 'RealWorldRigidRobot']) and (self.args.images_in_real_world_dataset==0):
+		if (self.args.data in ['RealWorldRigid', 'RealWorldRigidRobot', 'MAGI']) and (self.args.images_in_real_world_dataset==0):
 			viz_embeddings = False
 
 		if viz_embeddings:
@@ -1011,6 +1020,8 @@ class PolicyManager_BaseClass():
 	def get_robot_visuals(self, i, latent_z, trajectory, return_image=False, return_numpy=False, z_seq=False, indexed_data_element=None, segment_indices=None): #!!! here
 
 		print("We are in the PM_Base get_robot_visuals func !!!")
+		print("We are in the PM_Base get_robot_visuals func !!!")
+		print("We are in the PM_Base get_robot_visuals func !!!")
 
 		########################################
 		# 1) Get task ID. 
@@ -1034,8 +1045,8 @@ class PolicyManager_BaseClass():
 		########################################
 		# 2) Feed Z into policy, rollout trajectory.
 		########################################
-		
-		self.visualizer.create_environment(task_id=env_name)
+		if not( self.args.data in ['MAGI']):
+			self.visualizer.create_environment(task_id=env_name)
 
 		if self.args.setting in ['queryjoint']:
 			trajectory_rollout, rendered_rollout_trajectory = self.partitioned_rollout_robot_trajectory(trajectory[0], latent_z, rollout_length=max(trajectory.shape[0],0), z_seq=z_seq, original_trajectory=trajectory, segment_indices=segment_indices)
@@ -1086,6 +1097,8 @@ class PolicyManager_BaseClass():
 		if self.args.data in ['RealWorldRigid'] and self.args.images_in_real_world_dataset:
 			# This should already be segmented to the right start and end point...		
 			self.ground_truth_gif = self.visualizer.visualize_prerendered_gif(indexed_data_element['subsampled_images'], gif_path=self.dir_name, gif_name="Traj_{0}_GIF_GT.gif".format(str(i).zfill(3)))
+		elif self.args.data in ['MAGI']:
+			pass
 		else:			
 			self.ground_truth_gif = self.visualizer.visualize_joint_trajectory(unnorm_gt_trajectory, gif_path=self.dir_name, gif_name="Traj_{0}_GIF_GT.gif".format(str(i).zfill(3)), return_and_save=True, end_effector=self.args.ee_trajectories, task_id=env_name)
 
@@ -1125,12 +1138,16 @@ class PolicyManager_BaseClass():
 
 			self.visualizer.visualize_prerendered_gif(self.rollout_gif, gif_path=self.dir_name, gif_name="Traj_{0}_GIF_{1}Rollout.gif".format(str(i).zfill(3), gtsim_prefix))
 			plt.savefig(os.path.join(self.dir_name,"Traj_{0}_Plot_{1}Rollout.png".format(str(i).zfill(3), gtsim_prefix)))		
+		elif self.args.data in ['MAGI']:
+			pass
 		else:
 			self.rollout_gif = self.visualizer.visualize_joint_trajectory(unnorm_pred_trajectory, gif_path=self.dir_name, gif_name="Traj_{0}_GIF_Rollout.gif".format(str(i).zfill(3)), return_and_save=True, end_effector=self.args.ee_trajectories, task_id=env_name)
-			
 			plt.savefig(os.path.join(self.dir_name,"Traj_{0}_Plot_Rollout.png".format(str(i).zfill(3))))
 
 		plt.close()
+
+		if self.args.data in ['MAGI']:
+			return unnorm_pred_trajectory
 
 		########################################
 		# 5) Add to GIF lists. 
@@ -2936,13 +2953,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 
 				whether_load_z_set = self.args.latent_set_file_path is not None
 
-				# print("###############################################")
-				# print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-				# print("Temporarily not visualizing.")
-				# print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
-				# print("###############################################")
 				self.visualize_robot_data(load_sets=whether_load_z_set)
-
 				
 				print("###############################################")
 				print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
@@ -2978,7 +2989,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		# Embed plots. 
 
 		# Set N:
-		self.N = 500
+		self.N = min( 500, self.dataset.dataset_length)
 
 		self.latent_z_set = np.zeros((self.N,self.latent_z_dimensionality))
 			
@@ -3051,10 +3062,10 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		# Use the dataset to get reasonable trajectories (because without the information bottleneck / KL between N(0,1), cannot just randomly sample.)
 		# # for i in range(self.N//self.args.batch_size+1, 32)
 		# for i in range(0, self.N, self.args.batch_size):
-		for i in range(self.N//self.args.batch_size+1):
+		for i in range( (self.N+self.args.batch_size - 1 )//self.args.batch_size ):
 
 			# Mapped index
-			number_batches_for_dataset = (len(self.dataset)//self.args.batch_size)+1
+			number_batches_for_dataset = (len(self.dataset) + self.args.batch_size - 1 )//self.args.batch_size
 			j = i % number_batches_for_dataset
 
 			########################################
