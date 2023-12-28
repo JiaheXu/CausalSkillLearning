@@ -11,7 +11,17 @@ from matplotlib.offsetbox import (TextArea, DrawingArea, OffsetImage,
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
 import cv2
+from matplotlib.patches import Ellipse
+from sklearn import mixture
 
+import matplotlib
+matplotlib.use("Agg")
+
+import seaborn as sns
+sns.set(style="white")
+colors = sns.color_palette("Paired", n_colors=12).as_hex()
+
+from math import sqrt
 
 file_path = "/home/mmpug/CausalSkillLearning/TrainingLogs/MAGI_1224/LatentSetDirectory/E100000_C100000"
 
@@ -74,26 +84,90 @@ def plot_embedding(embedded_zs, title, shared=False, trajectory=False): #!!! her
 
 	return None
 
+def plot(data, y):
+    n = y.shape[0]
+
+    fig, ax = plt.subplots(1, 1, figsize=(1.61803398875*4, 4))
+    ax.set_facecolor("#bbbbbb")
+    ax.set_xlabel("Dimension 1")
+    ax.set_ylabel("Dimension 2")
+
+    # plot the locations of all data points ..
+    for i, point in enumerate(data.data):
+        if y[i] == 0:
+            # .. as well as their predicted class
+            ax.scatter(*point, zorder=i, color="#dbe9ff", alpha=.6, edgecolors=colors[0])
+        elif y[i] == 1:
+            ax.scatter(*point, zorder=i, color="#ffffff", alpha=.6, edgecolors=colors[1])			
+        else:
+            ax.scatter(*point, zorder=i, color="#ffdbdb", alpha=.6, edgecolors=colors[2])
+
+    handles = [
+		plt.Line2D([0], [0], color="r", lw=4, label=" skill 1 "),
+        plt.Line2D([0], [0], color="g", lw=4, label=" skill 2 "),
+        plt.Line2D([0], [0], color="b", lw=4, label=" skill 3 ")]
+
+    legend = ax.legend(loc="best", handles=handles)
+
+    plt.tight_layout()
+    plt.savefig("example2.pdf")
+
+def draw_ellipse(position, covariance, ax=None, **kwargs):
+    """Draw an ellipse with a given position and covariance"""
+    ax = ax or plt.gca()
+    
+    # Convert covariance to principal axes
+    if covariance.shape == (2, 2):
+        U, s, Vt = np.linalg.svd(covariance)
+        angle = np.degrees(np.arctan2(U[1, 0], U[0, 0]))
+        width, height = 2 * np.sqrt(s)
+    else:
+        angle = 0
+        width, height = 2 * np.sqrt(covariance)
+    
+    # Draw the Ellipse
+    for nsig in range(1, 4):
+        ax.add_patch(Ellipse(position, nsig * width, nsig * height,
+                             angle, **kwargs))
+        
+def plot_gmm(gmm, X, label=True, ax=None):
+	# ax = ax or plt.gca()
+	fig, ax = plt.subplots(1, 1, figsize=(1.61803398875*4, 4))
+	ax.set_facecolor("#bbbbbb")
+	ax.set_xlabel("Dimension 1")
+	ax.set_ylabel("Dimension 2")
+
+	labels = gmm.fit(X).predict(X)
+	if label:
+	    ax.scatter(X[:, 0], X[:, 1], c=labels, s=40, cmap='viridis', zorder=2)
+	else:
+		ax.scatter(X[:, 0], X[:, 1], s=40, zorder=2)
+	ax.axis('equal')
+    
+	w_factor = 0.2 / gmm.weights_.max()
+	for pos, covar, w in zip(gmm.means_, gmm.covariances_, gmm.weights_):
+		draw_ellipse(pos, covar, alpha=w * w_factor)
+	legend = ax.legend(loc="best")
+
+	plt.tight_layout()
+	plt.savefig("example2.pdf")
 
 embedded_z_dict = {}
 embedded_z_dict['perp5'] = get_robot_embedding(perplexity=5) #!!! here
 embedded_z_dict['perp10'] = get_robot_embedding(perplexity=10)
 embedded_z_dict['perp30'] = get_robot_embedding(perplexity=30)
 
-# # Now plot the embedding.
+# print("embedded_z_dict['perp5']: ", embedded_z_dict['perp5'].size())
 
-stat_dictionary = {}
-stat_dictionary['counter'] = 0
-stat_dictionary['i'] = 0
-stat_dictionary['epoch'] = 100000
-stat_dictionary['batch_size'] = 64
-statistics_line = "Epoch: {0}, Count: {1}, I: {2}, Batch: {3}".format(stat_dictionary['epoch'], stat_dictionary['counter'], stat_dictionary['i'], stat_dictionary['batch_size'])
+data = torch.from_numpy( embedded_z_dict['perp30'] )
+n_components = 3
+d = 2
+model = mixture.GaussianMixture(n_components, covariance_type='full').fit(data)
 
-image_perp5 = plot_embedding(embedded_z_dict['perp5'], title="Z Space {0} Perp_05".format(statistics_line)) #!!! here
-image_perp10 = plot_embedding(embedded_z_dict['perp10'], title="Z Space {0} Perp_10".format(statistics_line))
-image_perp30 = plot_embedding(embedded_z_dict['perp30'], title="Z Space {0} Perp_30".format(statistics_line))
+# model = GaussianMixture(n_components, d)
+# model.fit(data)
 
-# cv2.imwrite( "perp5.png", image_perp5)
-# cv2.imwrite( "perp10.png", image_perp10)
-# cv2.imwrite( "perp30.png", image_perp30)
+y = model.predict(data)
+# plot(data, y)
+plot_gmm(model, data)
 			

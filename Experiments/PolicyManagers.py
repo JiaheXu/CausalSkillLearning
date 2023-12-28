@@ -2805,7 +2805,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 			return trajectory_rollout		
 
 	def run_iteration(self, counter, i, return_z=False, and_train=True): # return_z=True, and_train=False) for evaluate
-
+																		 # self.run_iteration(counter, i) for train
 		print("in PM_Pretrain run_iteration func !!!")
 		print("in PM_Pretrain run_iteration func !!!")
 		print("in PM_Pretrain run_iteration func !!!")
