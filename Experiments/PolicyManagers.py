@@ -557,7 +557,7 @@ class PolicyManager_BaseClass():
 			# Initialize variables.
 			#####################################################
 
-			self.shuffle(len(self.dataset)-self.test_set_size, shuffle=True)
+			#self.shuffle(len(self.dataset)-self.test_set_size, shuffle=True)
 			
 			self.global_segment_index_list = []
 
@@ -567,93 +567,107 @@ class PolicyManager_BaseClass():
 			print("self.N: ", self.N)
 			print("self.N: ", self.N)
 
+			all_latent_z = []
+
 			for j in range( (self.N + self.args.batch_size - 1) //self.args.batch_size ):
 				
 				number_batches_for_dataset = (self.N + self.args.batch_size - 1) //self.args.batch_size 
 				i = j % number_batches_for_dataset
-
 				print("Running iteration of segment in viz, i: ", i, "j:", j) ####!!! here
-				latent_z, sample_trajs, _, data_element = self.run_iteration(0, i, return_z=True, and_train=False)
+				latent_z_sets = []
+				for k in range( self.dataset[j]['demo'].shape[0] - 14 + 1 ):
+					
+					latent_z, sample_trajs, _, data_element = self.run_iteration(0, i, k, return_z=True, and_train=False)
+					
+					if(self.args.data == "MAGI"):
+						latent_z_set = copy.deepcopy(latent_z[0][0].detach().cpu().numpy())
+						# print("latent_z_set: ", latent_z_set.shape)
+						latent_z_sets.append(latent_z_set)
+						continue
 
-				if self.args.batch_size>1:
+					if self.args.batch_size>1:
 
-					# Set the max length if it's less than this batch of trajectories. 
-					if sample_trajs.shape[0]>self.max_len:
-						self.max_len = sample_trajs.shape[0]
-
-					#######################
-					# Create env for batch.
-					if not(self.args.data in ['RealWorldRigid', 'NDAX', 'NDAXMotorAngles', 'MAGI']):
-						self.per_batch_env_management(data_element[0])
-
-					for b in range(self.args.batch_size):
-						
-						self.indices.append(j*self.args.batch_size+b)
-						print("######################################### 1")	
-						print("Getting visuals for trajectory: ",j*self.args.batch_size+b)
-
-						self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b,stream_z_indices].detach().cpu().numpy())
-						
-						# Rollout each individual trajectory in this batch.
-						trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[0,b], sample_trajs[:,b], indexed_data_element=data_element[b]) #!!! here
-
-						gt_traj = sample_trajs[:,b]
-							
-						# Now append this particular sample traj and the rollout into trajectroy and rollout sets.
-						self.trajectory_set.append(copy.deepcopy(gt_traj))
-						self.trajectory_rollout_set.append(copy.deepcopy(trajectory_rollout))
-						# self.task_name_set.append(data_element[b]['environment-name'])
-
+						# Set the max length if it's less than this batch of trajectories. 
+						if sample_trajs.shape[0]>self.max_len:
+							self.max_len = sample_trajs.shape[0]
 
 						#######################
-						# Save the GT trajectory, the rollout, and Z into numpy files. 
+						# Create env for batch.
+						if not(self.args.data in ['RealWorldRigid', 'NDAX', 'NDAXMotorAngles', 'MAGI']):
+							self.per_batch_env_management(data_element[0])
 
-						#####################################################
-						# Save trajectories and Zs
-						#####################################################
-
-						k = j*self.args.batch_size+b	
-						kstr = str(k).zfill(3)
-
-						# print("Before unnorm")
-						# embed()
-						if self.args.normalization is not None:
+						for b in range(self.args.batch_size):
 							
-							gt_traj = (self.trajectory_set[k] *self.norm_denom_value) + self.norm_sub_value
-							# gt_traj_tuple = (data_element[b]['environment-name'], gt_traj)
-							gt_traj_tuple = (i, gt_traj)
+							self.indices.append(j*self.args.batch_size+b)
+							print("######################################### 1")	
+							print("Getting visuals for trajectory: ",j*self.args.batch_size+b)
 
-							# Don't unnormalize, we already did in get robot visuals. 
-							rollout_traj = self.trajectory_rollout_set[k]
-							# rollout_traj_tuple = (data_element[b]['environment-name'], rollout_traj)
-							rollout_traj_tuple = (i, rollout_traj)
+							self.latent_z_set[j*self.args.batch_size+b] = copy.deepcopy(latent_z[0,b,stream_z_indices].detach().cpu().numpy())
 							
-							# rollout_traj = (self.trajectory_rollout_set[k]*self.norm_denom_value) + self.norm_sub_value
-												
-						np.save(os.path.join(self.traj_dir_name, "Traj{0}_GT.npy".format(kstr)), gt_traj_tuple)
-						np.save(os.path.join(self.traj_dir_name, "Traj{0}_Rollout.npy".format(kstr)), rollout_traj_tuple)
-						np.save(os.path.join(self.z_dir_name, "Traj{0}_Latent_Z.npy".format(kstr)), self.latent_z_set[k])						
+							# Rollout each individual trajectory in this batch.
+							trajectory_rollout = self.get_robot_visuals(j*self.args.batch_size+b, latent_z[0,b], sample_trajs[:,b], indexed_data_element=data_element[b]) #!!! here
 
-				else:
+							gt_traj = sample_trajs[:,b]
+								
+							# Now append this particular sample traj and the rollout into trajectroy and rollout sets.
+							self.trajectory_set.append(copy.deepcopy(gt_traj))
+							self.trajectory_rollout_set.append(copy.deepcopy(trajectory_rollout))
+							# self.task_name_set.append(data_element[b]['environment-name'])
 
-					print("######################################### 2")	
-					print("Getting visuals for trajectory: ",j,i)
 
-					if latent_z is not None:
-						self.indices.append(i)
+							#######################
+							# Save the GT trajectory, the rollout, and Z into numpy files. 
 
-						if len(sample_trajs)>self.max_len:
-							self.max_len = len(sample_trajs)
-						# Copy z. 
-						self.latent_z_set[j] = copy.deepcopy(latent_z.detach().cpu().numpy())
+							#####################################################
+							# Save trajectories and Zs
+							#####################################################
 
-						trajectory_rollout = self.get_robot_visuals(i, latent_z, sample_trajs)								
+							k = j*self.args.batch_size+b	
+							kstr = str(k).zfill(3)
 
-						self.trajectory_set.append(copy.deepcopy(sample_trajs))
-						self.trajectory_rollout_set.append(copy.deepcopy(trajectory_rollout))	
+							# print("Before unnorm")
+							# embed()
+							if self.args.normalization is not None:
+								
+								gt_traj = (self.trajectory_set[k] *self.norm_denom_value) + self.norm_sub_value
+								# gt_traj_tuple = (data_element[b]['environment-name'], gt_traj)
+								gt_traj_tuple = (i, gt_traj)
 
+								# Don't unnormalize, we already did in get robot visuals. 
+								rollout_traj = self.trajectory_rollout_set[k]
+								# rollout_traj_tuple = (data_element[b]['environment-name'], rollout_traj)
+								rollout_traj_tuple = (i, rollout_traj)
+								
+								# rollout_traj = (self.trajectory_rollout_set[k]*self.norm_denom_value) + self.norm_sub_value
+													
+							np.save(os.path.join(self.traj_dir_name, "Traj{0}_GT.npy".format(kstr)), gt_traj_tuple)
+							np.save(os.path.join(self.traj_dir_name, "Traj{0}_Rollout.npy".format(kstr)), rollout_traj_tuple)
+							np.save(os.path.join(self.z_dir_name, "Traj{0}_Latent_Z.npy".format(kstr)), self.latent_z_set[k])						
+
+					else:
+
+						print("######################################### 2")	
+						print("Getting visuals for trajectory: ",j,i)
+
+						if latent_z is not None:
+							self.indices.append(i)
+
+							if len(sample_trajs)>self.max_len:
+								self.max_len = len(sample_trajs)
+							# Copy z. 
+							self.latent_z_set[j] = copy.deepcopy(latent_z.detach().cpu().numpy())
+
+							trajectory_rollout = self.get_robot_visuals(i, latent_z, sample_trajs)								
+
+							self.trajectory_set.append(copy.deepcopy(sample_trajs))
+							self.trajectory_rollout_set.append(copy.deepcopy(trajectory_rollout))	
+				all_latent_z.append(np.array( latent_z_sets))
+			
+			np.save(os.path.join(self.z_dir_name, "ALL_Latent_Z.npy"), all_latent_z)
+			print(" saved!!!!")
+			embed()
 			# Get MIME embedding for rollout and GT trajectories, with same Z embedding. 
-			embedded_z = self.get_robot_embedding()
+			# embedded_z = self.get_robot_embedding()
 
 		#####################################################
 		# If precomputed sets.
@@ -2804,11 +2818,11 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		if return_traj:
 			return trajectory_rollout		
 
-	def run_iteration(self, counter, i, return_z=False, and_train=True): # return_z=True, and_train=False) for evaluate
+	def run_iteration(self, counter, i, k=0, return_z=False, and_train=True): # return_z=True, and_train=False) for evaluate
 																		 # self.run_iteration(counter, i) for train
 		print("in PM_Pretrain run_iteration func !!!")
-		print("in PM_Pretrain run_iteration func !!!")
-		print("in PM_Pretrain run_iteration func !!!")
+		# print("in PM_Pretrain run_iteration func !!!")
+		# print("in PM_Pretrain run_iteration func !!!")
 		####################################
 		####################################
 		# Basic Training Algorithm: 
@@ -2830,7 +2844,16 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		# Sample trajectory segment from dataset.
 		input_dict = {}
 
-		input_dict['state_action_trajectory'], input_dict['sample_action_seq'], input_dict['sample_traj'], input_dict['data_element'] = self.get_trajectory_segment(i)
+		if(self.args.data == "MAGI" and self.args.train == 0):
+			input_dict['state_action_trajectory'], input_dict['sample_action_seq'], input_dict['sample_traj'], input_dict['data_element'] = self.get_trajectory(i ,k)
+
+			# print("input_dict['state_action_trajectory']: ", input_dict['state_action_trajectory'].shape)
+			# print("input_dict['sample_action_seq']: ", input_dict['sample_action_seq'].shape)
+			# print("input_dict['sample_traj']: ", input_dict['sample_traj'].shape)
+			#print("input_dict['data_element']: ", input_dict['data_element'].shape)
+		else:
+			input_dict['state_action_trajectory'], input_dict['sample_action_seq'], input_dict['sample_traj'], input_dict['data_element'] = self.get_trajectory_segment(i)
+
 
 		self.sample_traj_var = input_dict['sample_traj']
 		self.input_dict = input_dict
@@ -2843,7 +2866,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		####################################
 		# Corrupt the inputs according to how much input_corruption_noise is set to.
 		state_action_trajectory = self.corrupt_inputs(input_dict['state_action_trajectory'])
-
+		# print("state_action_trajectory: ", state_action_trajectory.shape)
 		if state_action_trajectory is not None:
 			
 			####################################
@@ -2960,7 +2983,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 				print("Query before we run get trajectory latent sets, so latent_z_set isn't overwritten..")
 				print("@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@")
 				print("###############################################")				
-				embed()
+				# embed()
 
 				# Get reconstruction error... 
 				self.get_trajectory_and_latent_sets(get_visuals=True)
@@ -3225,7 +3248,7 @@ class PolicyManager_Pretrain(PolicyManager_BaseClass):
 		# which inherits its forward function from the continuous encoder. 
 		
 		# Do not need epsilon or eval. 
-		retrieved_z, _, _, _ = self.encoder_network.run_super_forward(trajectory, epsilon=0.0, \
+		retrieved_z, _, _, _ = self.encoder_network.run_super_forward(trajectory, epsilon=0.0, #!!! here
 			# network_dict=self.encoder_network.robot_network_dict, size_dict=self.encoder_network.robot_size_dict, artificial_batch_size=1)
 			network_dict=net_dict, size_dict=size_dict, artificial_batch_size=artificial_batch_size)
 		
@@ -3347,6 +3370,59 @@ class PolicyManager_BatchPretrain(PolicyManager_Pretrain):
 			data_element.append(self.dataset[index])
 
 		return data_element
+
+	def get_trajectory(self, i, k):
+		
+		# print("in PM_BatchPretrain get_trajectory func !!!")
+		# print("in PM_BatchPretrain get_trajectory func !!!")
+		# print("in PM_BatchPretrain get_trajectory func !!!")
+
+		if self.args.data in global_dataset_list:
+
+			data_element = self.dataset[self.index_list[i]]
+			# print("index_list: ", self.index_list[i])
+			self.current_traj_len = 14     
+
+			# print("self.current_traj_len: ", self.current_traj_len)
+
+			batch_trajectory = np.zeros((self.args.batch_size, self.current_traj_len, self.state_size))
+			self.subsampled_relative_object_state = np.zeros((self.args.batch_size, self.current_traj_len, self.args.env_state_size))
+
+			# POTENTIAL:
+			# for x in range(min(self.args.batch_size, len(self.index_list) - 1)):
+
+			# Changing this selection, assuming that the index_list is corrected to only have within dataset length indices.
+			for x in range(self.args.batch_size):
+			
+				# Select the trajectory for each instance in the batch. 
+				if self.args.ee_trajectories:
+					traj = data_element[x]['endeffector_trajectory']
+				else:
+					traj = data_element['demo'][k: k+14]
+           
+				batch_trajectory[x] = data_element['demo'][k: k+14]
+
+			# print("batch_trajectory: ", batch_trajectory.shape)
+			# If normalization is set to some value.
+			if self.args.normalization=='meanvar' or self.args.normalization=='minmax':
+				batch_trajectory = (batch_trajectory-self.norm_sub_value)/self.norm_denom_value
+
+				if self.args.data not in ['NDAX','NDAXMotorAngles']:
+					self.normalized_subsampled_relative_object_state = (self.subsampled_relative_object_state - self.norm_sub_value[-self.args.env_state_size:])/self.norm_denom_value[-self.args.env_state_size:]
+
+			# Compute actions.
+			action_sequence = np.diff(batch_trajectory,axis=1)
+			if self.args.data not in ['NDAX','NDAXMotorAngles']:
+				self.relative_object_state_actions = np.diff(self.normalized_subsampled_relative_object_state, axis=1)
+
+			# Concatenate
+			concatenated_traj = self.concat_state_action(batch_trajectory, action_sequence)
+
+			# Scaling action sequence by some factor.             
+			scaled_action_sequence = self.args.action_scale_factor*action_sequence
+
+			# return concatenated_traj.transpose((1,0,2)), scaled_action_sequence.transpose((1,0,2)), batch_trajectory.transpose((1,0,2))
+			return concatenated_traj.transpose((1,0,2)), scaled_action_sequence.transpose((1,0,2)), batch_trajectory.transpose((1,0,2)), data_element
 
 	def get_trajectory_segment(self, i):
 		
